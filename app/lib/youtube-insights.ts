@@ -21,7 +21,8 @@ export type Video = {
   viewCount?: number;
   likeCount?: number;
   commentCount?: number;
-  breakoutScore?: number;
+  breakoutScore: number;
+  breakoutReason: string;
 };
 
 export type CreatorLeaderboardEntry = {
