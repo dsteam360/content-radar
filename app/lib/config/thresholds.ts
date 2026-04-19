@@ -5,11 +5,15 @@ export const HIGH_ENGAGEMENT_RATE = 0.08;
 export const COMMENT_VELOCITY_WEIGHT = 5;
 export const LIKE_RATIO_WEIGHT = 2;
 export const VIEW_GROWTH_WEIGHT = 1;
+export const VELOCITY_WEIGHT = 3;
+export const FRESHNESS_DECAY_FACTOR = 24;
 export const MAX_SCORE = 100;
 
 export const BREAKOUT_REASON_LABELS = {
   strongComments: "Strong comments",
   highEngagement: "High engagement",
+  highVelocityEngagement: "High velocity engagement",
+  rapidEarlyGrowth: "Rapid early growth",
   recentSurge: "Recent surge",
   fastViews: "Fast views",
   steadyTraction: "Steady traction",
@@ -46,6 +50,10 @@ export const INTELLIGENCE_THRESHOLDS = {
     likeRatioWeight: LIKE_RATIO_WEIGHT,
     // Weight applied to comments in the breakout score.
     commentVelocityWeight: COMMENT_VELOCITY_WEIGHT,
+    // Weight applied to combined view/comment velocity in the breakout score.
+    velocityWeight: VELOCITY_WEIGHT,
+    // Hours over which freshness decays for velocity-heavy scoring.
+    freshnessDecayFactor: FRESHNESS_DECAY_FACTOR,
     // Maximum allowed breakout score after clamping.
     maxScore: MAX_SCORE,
   },

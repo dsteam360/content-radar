@@ -143,6 +143,7 @@ export async function GET(request: Request) {
     }
 
     const videos = playlistItems.map((item) => {
+      const currentTimestamp = Date.now()
       const videoId = item.contentDetails?.videoId ?? ''
       const publishedAt = item.contentDetails?.videoPublishedAt
       const viewCount = statsByVideoId[videoId]?.viewCount ?? 0
@@ -153,6 +154,7 @@ export async function GET(request: Request) {
         likeCount,
         commentCount,
         publishedAt,
+        currentTimestamp,
       })
 
       const scoredVideo = {
@@ -167,6 +169,7 @@ export async function GET(request: Request) {
         viewCount,
         likeCount,
         commentCount,
+        currentTimestamp,
         breakoutScore,
         breakoutReason: getBreakoutReason({
           breakoutScore,
@@ -174,6 +177,7 @@ export async function GET(request: Request) {
           likeCount,
           commentCount,
           publishedAt,
+          currentTimestamp,
         }),
       }
 
