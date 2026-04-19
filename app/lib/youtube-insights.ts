@@ -1,5 +1,3 @@
-"use client";
-
 import { INTELLIGENCE_THRESHOLDS } from "@/app/lib/config/thresholds";
 
 export type Creator = {

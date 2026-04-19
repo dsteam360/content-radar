@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { calculateBreakoutScore } from '@/app/lib/youtube-scoring'
 
 const API_KEY = process.env.YOUTUBE_API_KEY
 
@@ -30,24 +31,6 @@ type VideoStatsItem = {
 function toNumberStat(value?: string) {
   const parsedValue = Number(value)
   return Number.isFinite(parsedValue) ? parsedValue : 0
-}
-
-function calculateBreakoutScore({
-  viewCount,
-  likeCount,
-  commentCount,
-  publishedAt,
-}: {
-  viewCount: number
-  likeCount: number
-  commentCount: number
-  publishedAt?: string
-}) {
-  const publishedTime = publishedAt ? new Date(publishedAt).getTime() : Date.now()
-  const ageInDays = Math.max(0.5, (Date.now() - publishedTime) / (1000 * 60 * 60 * 24))
-  const viewVelocity = viewCount / ageInDays
-
-  return Math.round(viewVelocity / 100 + likeCount * 2 + commentCount * 5)
 }
 
 export async function GET(request: Request) {

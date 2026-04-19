@@ -20,6 +20,12 @@ export const INTELLIGENCE_THRESHOLDS = {
     topBreakoutFilterMinimum: 3000,
     // Minimum breakout score for the highest visible breakout tier.
     topTierScoreMinimum: 3000,
+    // Divisor applied to daily view velocity inside breakout scoring.
+    scoreVelocityDivisor: 100,
+    // Like multiplier used inside breakout scoring.
+    scoreLikeWeight: 2,
+    // Comment multiplier used inside breakout scoring.
+    scoreCommentWeight: 5,
   },
   engagement: {
     // Comment count that marks a video as comment-led.
@@ -60,4 +66,3 @@ export const INTELLIGENCE_THRESHOLDS = {
     maxInsightItems: 3,
   },
 } as const;
-
