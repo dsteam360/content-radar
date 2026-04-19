@@ -1,4 +1,7 @@
 import { INTELLIGENCE_THRESHOLDS } from "@/app/lib/config/thresholds";
+import { getBreakoutReason } from "@/app/lib/youtube-scoring";
+
+export { getBreakoutReason } from "@/app/lib/youtube-scoring";
 
 export type Creator = {
   id: number;
@@ -154,57 +157,6 @@ export function sortVideosByPerformance(videos: Video[]) {
 
     return getSafeNumber(rightVideo.viewCount) - getSafeNumber(leftVideo.viewCount);
   });
-}
-
-export function getBreakoutReason(video: Video) {
-  const {
-    commentWeight,
-    fastViewsPerDayMinimum,
-    fastViewsTotalMinimum,
-    highEngagementRateMinimum,
-    highLikesMinimum,
-    strongCommentsMinimum,
-  } = INTELLIGENCE_THRESHOLDS.engagement;
-  const { strongScoreMinimum } = INTELLIGENCE_THRESHOLDS.breakout;
-  const { minimumVideoAgeDays, millisecondsPerSecond, recentWindowDays } =
-    INTELLIGENCE_THRESHOLDS.time;
-  const breakoutScore = getSafeNumber(video.breakoutScore);
-  const viewCount = getSafeNumber(video.viewCount);
-  const likeCount = getSafeNumber(video.likeCount);
-  const commentCount = getSafeNumber(video.commentCount);
-
-  const publishedTime = video.publishedAt
-    ? new Date(video.publishedAt).getTime()
-    : Date.now();
-  const ageInDays = Math.max(
-    minimumVideoAgeDays,
-    (Date.now() - publishedTime) /
-      (millisecondsPerSecond *
-        INTELLIGENCE_THRESHOLDS.time.secondsPerMinute *
-        INTELLIGENCE_THRESHOLDS.time.minutesPerHour *
-        INTELLIGENCE_THRESHOLDS.time.hoursPerDay)
-  );
-  const viewVelocity = viewCount / ageInDays;
-  const engagementRate =
-    viewCount > 0 ? (likeCount + commentCount * commentWeight) / viewCount : 0;
-
-  if (commentCount >= strongCommentsMinimum) {
-    return "Strong comments";
-  }
-
-  if (engagementRate >= highEngagementRateMinimum || likeCount >= highLikesMinimum) {
-    return "High engagement";
-  }
-
-  if (ageInDays <= recentWindowDays && breakoutScore >= strongScoreMinimum) {
-    return "Recent surge";
-  }
-
-  if (viewVelocity >= fastViewsPerDayMinimum || viewCount >= fastViewsTotalMinimum) {
-    return "Fast views";
-  }
-
-  return "Steady traction";
 }
 
 export function matchesVideoFilter(video: Video, filter: VideoFilter) {
