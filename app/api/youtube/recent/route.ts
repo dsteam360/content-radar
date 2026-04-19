@@ -155,7 +155,7 @@ export async function GET(request: Request) {
         publishedAt,
       })
 
-      return {
+      const scoredVideo = {
         id: item.contentDetails?.videoId,
         title: item.snippet?.title,
         publishedAt,
@@ -176,6 +176,8 @@ export async function GET(request: Request) {
           publishedAt,
         }),
       }
+
+      return scoredVideo
     })
 
     return NextResponse.json({
