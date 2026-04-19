@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { calculateBreakoutScore } from '@/app/lib/youtube-scoring'
+import { calculateBreakoutScore, getBreakoutReason } from '@/app/lib/youtube-scoring'
 
 const API_KEY = process.env.YOUTUBE_API_KEY
 
@@ -148,6 +148,12 @@ export async function GET(request: Request) {
       const viewCount = statsByVideoId[videoId]?.viewCount ?? 0
       const likeCount = statsByVideoId[videoId]?.likeCount ?? 0
       const commentCount = statsByVideoId[videoId]?.commentCount ?? 0
+      const breakoutScore = calculateBreakoutScore({
+        viewCount,
+        likeCount,
+        commentCount,
+        publishedAt,
+      })
 
       return {
         id: item.contentDetails?.videoId,
@@ -161,7 +167,9 @@ export async function GET(request: Request) {
         viewCount,
         likeCount,
         commentCount,
-        breakoutScore: calculateBreakoutScore({
+        breakoutScore,
+        breakoutReason: getBreakoutReason({
+          breakoutScore,
           viewCount,
           likeCount,
           commentCount,
