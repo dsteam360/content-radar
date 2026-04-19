@@ -1,4 +1,10 @@
-import { INTELLIGENCE_THRESHOLDS } from "@/app/lib/config/thresholds";
+import {
+  BREAKOUT_REASON_LABELS,
+  INTELLIGENCE_THRESHOLDS,
+  MAX_SCORE,
+  MIN_DIVISOR,
+  MIN_SCORE,
+} from "@/app/lib/config/thresholds";
 
 export type ScoredVideoInput = {
   viewCount?: number;
@@ -15,10 +21,10 @@ export type ScoredVideoOutput = {
 
 function getSafeNonNegativeNumber(value?: number) {
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    return 0;
+    return MIN_SCORE;
   }
 
-  return Math.max(0, value);
+  return Math.max(MIN_SCORE, value);
 }
 
 function clampNumber(value: number, minimum: number, maximum: number) {
@@ -29,7 +35,7 @@ function clampNumber(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum);
 }
 
-function getAgeInDays(publishedAt?: string, minimumAgeDays = 0) {
+function getAgeInDays(publishedAt?: string, minimumAgeDays = MIN_SCORE) {
   const {
     hoursPerDay,
     millisecondsPerSecond,
@@ -39,7 +45,7 @@ function getAgeInDays(publishedAt?: string, minimumAgeDays = 0) {
   const publishedTime = publishedAt ? new Date(publishedAt).getTime() : Date.now();
 
   return Math.max(
-    Math.max(0, minimumAgeDays),
+    Math.max(MIN_SCORE, minimumAgeDays),
     (Date.now() - publishedTime) /
       (millisecondsPerSecond * secondsPerMinute * minutesPerHour * hoursPerDay)
   );
@@ -51,21 +57,28 @@ export function calculateBreakoutScore({
   publishedAt,
   viewCount,
 }: ScoredVideoInput) {
-  const { scoreCommentWeight, scoreLikeWeight, scoreVelocityDivisor } =
-    INTELLIGENCE_THRESHOLDS.breakout;
+  const {
+    commentVelocityWeight,
+    likeRatioWeight,
+    maxScore,
+    minViewsBaseline,
+    viewGrowthWeight,
+  } = INTELLIGENCE_THRESHOLDS.breakout;
   const { minimumVideoAgeDays } = INTELLIGENCE_THRESHOLDS.time;
   const safeViewCount = getSafeNonNegativeNumber(viewCount);
   const safeLikeCount = getSafeNonNegativeNumber(likeCount);
   const safeCommentCount = getSafeNonNegativeNumber(commentCount);
-  const ageInDays = Math.max(1, getAgeInDays(publishedAt, minimumVideoAgeDays));
-  const safeVelocityDivisor = Math.max(1, scoreVelocityDivisor);
+  const ageInDays = Math.max(MIN_DIVISOR, getAgeInDays(publishedAt, minimumVideoAgeDays));
+  const safeViewsBaseline = Math.max(MIN_DIVISOR, minViewsBaseline);
   const viewVelocity = safeViewCount / ageInDays;
+  const weightedViewGrowth =
+    (viewVelocity / safeViewsBaseline) * viewGrowthWeight;
+  const weightedLikeRatio = safeLikeCount * likeRatioWeight;
+  const weightedCommentVelocity = safeCommentCount * commentVelocityWeight;
   const rawScore =
-    viewVelocity / safeVelocityDivisor +
-    safeLikeCount * scoreLikeWeight +
-    safeCommentCount * scoreCommentWeight;
+    weightedViewGrowth + weightedLikeRatio + weightedCommentVelocity;
 
-  return clampNumber(Math.round(rawScore), 0, 100);
+  return clampNumber(Math.round(rawScore), MIN_SCORE, Math.min(MAX_SCORE, maxScore));
 }
 
 export function getBreakoutReason({
@@ -87,44 +100,49 @@ export function getBreakoutReason({
   const { minimumVideoAgeDays, recentWindowDays } = INTELLIGENCE_THRESHOLDS.time;
   const safeBreakoutScore = clampNumber(
     getSafeNonNegativeNumber(breakoutScore),
-    0,
-    100
+    MIN_SCORE,
+    MAX_SCORE
   );
   const safeViewCount = getSafeNonNegativeNumber(viewCount);
   const safeLikeCount = getSafeNonNegativeNumber(likeCount);
   const safeCommentCount = getSafeNonNegativeNumber(commentCount);
-  const ageInDays = Math.max(1, getAgeInDays(publishedAt, minimumVideoAgeDays));
+  const ageInDays = Math.max(MIN_DIVISOR, getAgeInDays(publishedAt, minimumVideoAgeDays));
   const viewVelocity = safeViewCount / ageInDays;
   const engagementRate =
-    safeViewCount > 0
+    safeViewCount > MIN_SCORE
       ? (safeLikeCount + safeCommentCount * commentWeight) / safeViewCount
-      : 0;
+      : MIN_SCORE;
 
   if (safeCommentCount >= strongCommentsMinimum) {
-    return "Strong comments";
+    return BREAKOUT_REASON_LABELS.strongComments;
   }
 
   if (
     engagementRate >= highEngagementRateMinimum ||
     safeLikeCount >= highLikesMinimum
   ) {
-    return "High engagement";
+    return BREAKOUT_REASON_LABELS.highEngagement;
   }
 
   if (ageInDays <= recentWindowDays && safeBreakoutScore >= strongScoreMinimum) {
-    return "Recent surge";
+    return BREAKOUT_REASON_LABELS.recentSurge;
   }
 
   if (
     viewVelocity >= fastViewsPerDayMinimum ||
     safeViewCount >= fastViewsTotalMinimum
   ) {
-    return "Fast views";
+    return BREAKOUT_REASON_LABELS.fastViews;
   }
 
-  if (safeBreakoutScore > 0 || safeViewCount > 0 || safeLikeCount > 0 || safeCommentCount > 0) {
-    return "Steady traction";
+  if (
+    safeBreakoutScore > MIN_SCORE ||
+    safeViewCount > MIN_SCORE ||
+    safeLikeCount > MIN_SCORE ||
+    safeCommentCount > MIN_SCORE
+  ) {
+    return BREAKOUT_REASON_LABELS.steadyTraction;
   }
 
-  return "No significant signal";
+  return BREAKOUT_REASON_LABELS.noSignificantSignal;
 }

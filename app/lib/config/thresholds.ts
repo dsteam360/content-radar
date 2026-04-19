@@ -1,3 +1,21 @@
+export const MIN_SCORE = 0;
+export const MIN_DIVISOR = 1;
+export const MIN_VIEWS_BASELINE = 100;
+export const HIGH_ENGAGEMENT_RATE = 0.08;
+export const COMMENT_VELOCITY_WEIGHT = 5;
+export const LIKE_RATIO_WEIGHT = 2;
+export const VIEW_GROWTH_WEIGHT = 1;
+export const MAX_SCORE = 100;
+
+export const BREAKOUT_REASON_LABELS = {
+  strongComments: "Strong comments",
+  highEngagement: "High engagement",
+  recentSurge: "Recent surge",
+  fastViews: "Fast views",
+  steadyTraction: "Steady traction",
+  noSignificantSignal: "No significant signal",
+} as const;
+
 export const INTELLIGENCE_THRESHOLDS = {
   time: {
     // Milliseconds in a second for timestamp math.
@@ -20,18 +38,22 @@ export const INTELLIGENCE_THRESHOLDS = {
     topBreakoutFilterMinimum: 3000,
     // Minimum breakout score for the highest visible breakout tier.
     topTierScoreMinimum: 3000,
-    // Divisor applied to daily view velocity inside breakout scoring.
-    scoreVelocityDivisor: 100,
-    // Like multiplier used inside breakout scoring.
-    scoreLikeWeight: 2,
-    // Comment multiplier used inside breakout scoring.
-    scoreCommentWeight: 5,
+    // Baseline used to normalize daily view growth before weighting.
+    minViewsBaseline: MIN_VIEWS_BASELINE,
+    // Weight applied to normalized daily view growth in the breakout score.
+    viewGrowthWeight: VIEW_GROWTH_WEIGHT,
+    // Weight applied to likes in the breakout score.
+    likeRatioWeight: LIKE_RATIO_WEIGHT,
+    // Weight applied to comments in the breakout score.
+    commentVelocityWeight: COMMENT_VELOCITY_WEIGHT,
+    // Maximum allowed breakout score after clamping.
+    maxScore: MAX_SCORE,
   },
   engagement: {
     // Comment count that marks a video as comment-led.
     strongCommentsMinimum: 10,
     // Relative engagement rate that qualifies as high engagement.
-    highEngagementRateMinimum: 0.08,
+    highEngagementRateMinimum: HIGH_ENGAGEMENT_RATE,
     // Absolute likes that also qualify as high engagement.
     highLikesMinimum: 1500,
     // Comment weight used inside engagement-rate scoring.
