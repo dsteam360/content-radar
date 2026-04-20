@@ -22,6 +22,46 @@ import {
 } from "./lib/youtube-insights";
 import { supabase } from "./lib/supabase";
 
+type DashboardStateCardProps = {
+  title: string;
+  message: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  isActionDisabled?: boolean;
+  tone?: "default" | "error";
+};
+
+function DashboardStateCard({
+  title,
+  message,
+  actionLabel,
+  onAction,
+  isActionDisabled = false,
+  tone = "default",
+}: DashboardStateCardProps) {
+  const toneClasses =
+    tone === "error"
+      ? "border-red-500/30 bg-red-950/20"
+      : "border-zinc-800 bg-zinc-900";
+
+  return (
+    <div className={`rounded-2xl border p-5 ${toneClasses}`}>
+      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">{message}</p>
+      {actionLabel && onAction && (
+        <button
+          type="button"
+          onClick={onAction}
+          disabled={isActionDisabled}
+          className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   type LeaderboardSortMode =
     | "Avg Breakout"
@@ -40,6 +80,7 @@ export default function Home() {
     {}
   );
   const [breakoutLoading, setBreakoutLoading] = useState(false);
+  const [youtubeErrorMessage, setYoutubeErrorMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [videoFilter, setVideoFilter] = useState<VideoFilter>("All");
   const [leaderboardSortMode, setLeaderboardSortMode] =
@@ -71,6 +112,7 @@ export default function Home() {
 
   async function loadBreakoutPosts(youtubeCreators: Creator[]) {
     setBreakoutLoading(true);
+    setYoutubeErrorMessage("");
 
     try {
       const breakoutEntries = await Promise.all(
@@ -80,28 +122,56 @@ export default function Home() {
           );
 
           if (!normalizedHandle) {
-            return [creator.id, []] as const;
+            return {
+              creatorId: creator.id,
+              videos: [],
+              failed: false,
+            } as const;
           }
 
           const response = await fetch(
             `/api/youtube/recent?handle=${encodeURIComponent(normalizedHandle)}`
           );
 
-          const data = await response.json();
+          const data = await response.json().catch(() => ({}));
 
           if (!response.ok) {
             console.error(`Failed to load videos for ${creator.name}`, data);
-            return [creator.id, []] as const;
+            return {
+              creatorId: creator.id,
+              videos: [],
+              failed: true,
+            } as const;
           }
 
-          return [creator.id, data.videos ?? []] as const;
+          return {
+            creatorId: creator.id,
+            videos: data.videos ?? [],
+            failed: false,
+          } as const;
         })
       );
 
-      setBreakoutPosts(Object.fromEntries(breakoutEntries));
+      const failedCreators = breakoutEntries.filter((entry) => entry.failed);
+
+      if (failedCreators.length > 0) {
+        setYoutubeErrorMessage(
+          failedCreators.length === youtubeCreators.length
+            ? "We couldn't load recent YouTube videos right now. Retry the fetch or check the creator handle and API key."
+            : `We loaded most creator videos, but ${failedCreators.length} fetch${failedCreators.length === 1 ? "" : "es"} failed. Retry to refresh the missing YouTube results.`
+        );
+      }
+
+      setBreakoutPosts(
+        Object.fromEntries(
+          breakoutEntries.map((entry) => [entry.creatorId, entry.videos])
+        )
+      );
     } catch (error) {
       console.error("Error loading breakout posts:", error);
-      setErrorMessage("Failed to load YouTube videos.");
+      setYoutubeErrorMessage(
+        "We couldn't load recent YouTube videos right now. Retry the fetch or check the creator handle and API key."
+      );
     } finally {
       setBreakoutLoading(false);
     }
@@ -121,6 +191,7 @@ export default function Home() {
       loadBreakoutPosts(youtubeCreators);
     } else {
       setBreakoutPosts({});
+      setYoutubeErrorMessage("");
     }
   }, [creators]);
 
@@ -193,6 +264,9 @@ export default function Home() {
       creator.platform.toLowerCase() === "youtube" &&
       normalizeYoutubeHandle(creator.youtube_handle ?? "")
   );
+  const totalFetchedYoutubeVideos = youtubeCreators.reduce((totalVideos, creator) => {
+    return totalVideos + (breakoutPosts[creator.id]?.length ?? 0);
+  }, 0);
 
   const leaderboardSortValue = (entry: CreatorLeaderboardEntry) => {
     if (leaderboardSortMode === "Breakout Rate") {
@@ -276,6 +350,12 @@ export default function Home() {
     "Views/Hour",
     "Recent Views",
   ];
+
+  const retryYoutubeFetch = () => {
+    if (!breakoutLoading && youtubeCreators.length > 0) {
+      loadBreakoutPosts(youtubeCreators);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-black text-white p-6">
@@ -606,16 +686,45 @@ export default function Home() {
             </div>
           )}
 
-          {breakoutLoading ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-4 text-gray-400">
-              Loading YouTube videos...
-            </div>
-          ) : Object.keys(breakoutPosts).length === 0 ? (
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-4 text-gray-400">
-              No YouTube creators available yet.
-            </div>
+          {breakoutLoading && totalFetchedYoutubeVideos === 0 ? (
+            <DashboardStateCard
+              title="Loading YouTube intelligence"
+              message="We’re pulling the latest tracked uploads, scoring momentum, and preparing the dashboard for review."
+            />
+          ) : youtubeCreators.length === 0 ? (
+            <DashboardStateCard
+              title="Track a YouTube creator to unlock analytics"
+              message="Add at least one YouTube creator with a valid handle above to populate the leaderboard, patterns, and breakout tracking."
+            />
+          ) : totalFetchedYoutubeVideos === 0 ? (
+            <DashboardStateCard
+              title={
+                youtubeErrorMessage
+                  ? "We couldn't load YouTube videos"
+                  : "No recent YouTube videos returned"
+              }
+              message={
+                youtubeErrorMessage ||
+                "Your tracked YouTube creators are connected, but no recent videos came back yet. Check the handle, wait for a new upload, or retry the fetch."
+              }
+              actionLabel="Retry YouTube fetch"
+              onAction={retryYoutubeFetch}
+              isActionDisabled={breakoutLoading}
+              tone={youtubeErrorMessage ? "error" : "default"}
+            />
           ) : (
             <div className="space-y-6">
+              {youtubeErrorMessage && (
+                <DashboardStateCard
+                  title="Some YouTube results need another pass"
+                  message={youtubeErrorMessage}
+                  actionLabel="Retry YouTube fetch"
+                  onAction={retryYoutubeFetch}
+                  isActionDisabled={breakoutLoading}
+                  tone="error"
+                />
+              )}
+
               {youtubeCreators.map((creator) => {
                   const creatorVideos = sortVideosByPerformance(
                     breakoutPosts[creator.id] ?? []
@@ -778,13 +887,25 @@ export default function Home() {
                           })}
                         </div>
                       ) : (
-                        <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-4 text-sm text-gray-400">
-                          No videos match the {videoFilter.toLowerCase()} filter.
-                        </div>
+                        <DashboardStateCard
+                          title="No videos match this filter"
+                          message={`No recent videos from ${creator.name} match the ${videoFilter.toLowerCase()} view right now. Try another filter to widen the signal.`}
+                          actionLabel="Show all videos"
+                          onAction={() => setVideoFilter("All")}
+                        />
                       )}
                     </div>
                   );
                 })}
+
+              {visibleFilteredVideos.length === 0 && (
+                <DashboardStateCard
+                  title="No visible videos under the current filter"
+                  message={`The ${videoFilter.toLowerCase()} filter is narrowing the set down to zero visible videos. Reset to All to compare the full tracked YouTube feed again.`}
+                  actionLabel="Reset to All"
+                  onAction={() => setVideoFilter("All")}
+                />
+              )}
             </div>
           )}
         </section>
