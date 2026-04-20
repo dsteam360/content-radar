@@ -8,6 +8,7 @@ import {
   getAnalystTakeaways,
   getBenchmarkSummary,
   getBreakoutReason,
+  getCreatorBenchmarkStatus,
   getCreatorLeaderboardEntry,
   getPatternSnapshot,
   getTopBreakoutScore,
@@ -17,6 +18,7 @@ import {
   normalizeYoutubeHandle,
   sortVideosByPerformance,
   type Creator,
+  type CreatorBenchmarkStatus,
   type CreatorLeaderboardEntry,
   type TopSignalVideo,
   type Video,
@@ -97,6 +99,28 @@ function SignalCard({
         <p className="mt-1 text-sm font-semibold text-white">{metricValue}</p>
       </div>
     </div>
+  );
+}
+
+type BenchmarkBadgeProps = {
+  label: string;
+  status: CreatorBenchmarkStatus["breakoutStatus"];
+};
+
+function BenchmarkBadge({ label, status }: BenchmarkBadgeProps) {
+  const toneClasses =
+    status === "Above"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : status === "Near"
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+        : "border-zinc-700 bg-zinc-900 text-zinc-300";
+
+  return (
+    <span
+      className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClasses}`}
+    >
+      {label}: {status} Benchmark
+    </span>
   );
 }
 
@@ -377,6 +401,7 @@ export default function Home() {
     breakoutPosts,
     videoFilter
   );
+  const hasBenchmarkData = visibleFilteredVideos.length > 0;
 
   const videoFilterOptions: VideoFilter[] = [
     "All",
@@ -881,6 +906,9 @@ export default function Home() {
                   );
                   const topBreakoutScore = getTopBreakoutScore(creatorVideos);
                   const creatorAnalytics = aggregateCreatorStats(creatorVideos);
+                  const creatorBenchmarkStatus = hasBenchmarkData
+                    ? getCreatorBenchmarkStatus(creatorAnalytics, benchmarkSummary)
+                    : null;
 
                   return (
                     <div
@@ -901,6 +929,23 @@ export default function Home() {
                           YouTube
                         </span>
                       </div>
+
+                      {creatorBenchmarkStatus && (
+                        <div className="mb-4 flex flex-wrap gap-2">
+                          <BenchmarkBadge
+                            label="Breakout"
+                            status={creatorBenchmarkStatus.breakoutStatus}
+                          />
+                          <BenchmarkBadge
+                            label="Velocity"
+                            status={creatorBenchmarkStatus.velocityStatus}
+                          />
+                          <BenchmarkBadge
+                            label="Engagement"
+                            status={creatorBenchmarkStatus.engagementStatus}
+                          />
+                        </div>
+                      )}
 
                       <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 md:grid-cols-5">
                         <div>

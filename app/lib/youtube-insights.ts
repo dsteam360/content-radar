@@ -65,6 +65,7 @@ export type CreatorAnalytics = {
   avgBreakoutScore: number;
   breakoutRate: number;
   avgViewsPerHour: number;
+  avgEngagementRate: number;
   topPerformer: Video | null;
   totalRecentViews: number;
   topVideoTitle: string;
@@ -89,9 +90,18 @@ export type BenchmarkSummary = {
   medianViews: number;
   medianBreakoutScore: number;
   medianViewsPerHour: number;
+  medianEngagementRate: number;
   highBreakoutThreshold: number;
   highVelocityThreshold: number;
   highEngagementThreshold: number;
+};
+
+export type BenchmarkStatus = "Above" | "Near" | "Below";
+
+export type CreatorBenchmarkStatus = {
+  breakoutStatus: BenchmarkStatus;
+  velocityStatus: BenchmarkStatus;
+  engagementStatus: BenchmarkStatus;
 };
 
 type CreatorVideoSummary = {
@@ -120,6 +130,22 @@ function getPercentile(values: number[], percentile: number) {
   );
 
   return sortedValues[index] ?? 0;
+}
+
+function getBenchmarkLevel(
+  value: number,
+  medianThreshold: number,
+  highThreshold: number
+): BenchmarkStatus {
+  if (value >= highThreshold) {
+    return "Above";
+  }
+
+  if (value >= medianThreshold) {
+    return "Near";
+  }
+
+  return "Below";
 }
 
 function enrichVideoMetrics(video: Video): TopSignalVideo {
@@ -205,6 +231,7 @@ export function aggregateCreatorStats(videos: Video[]): CreatorAnalytics {
       avgBreakoutScore: 0,
       breakoutRate: 0,
       avgViewsPerHour: 0,
+      avgEngagementRate: 0,
       topPerformer: null,
       totalRecentViews: 0,
       topVideoTitle: "No recent videos",
@@ -240,6 +267,9 @@ export function aggregateCreatorStats(videos: Video[]): CreatorAnalytics {
   const totalViewsPerHour = aggregatedVideos.reduce((sum, video) => {
     return sum + video.viewsPerHour;
   }, 0);
+  const totalEngagementRate = aggregatedVideos.reduce((sum, video) => {
+    return sum + video.engagementRate;
+  }, 0);
   const breakoutVideos = aggregatedVideos.filter((video) => {
     return video.breakoutScore >= qualifiedVideoScoreMinimum;
   }).length;
@@ -260,6 +290,7 @@ export function aggregateCreatorStats(videos: Video[]): CreatorAnalytics {
     avgBreakoutScore: Math.round(totalBreakoutScore / aggregatedVideos.length),
     breakoutRate,
     avgViewsPerHour: Math.round(totalViewsPerHour / aggregatedVideos.length),
+    avgEngagementRate: totalEngagementRate / aggregatedVideos.length,
     topPerformer,
     totalRecentViews: totalViews,
     topVideoTitle: topPerformer.title || "Untitled video",
@@ -428,6 +459,7 @@ export function getBenchmarkSummary(videos: Video[]): BenchmarkSummary {
       medianViews: 0,
       medianBreakoutScore: 0,
       medianViewsPerHour: 0,
+      medianEngagementRate: 0,
       highBreakoutThreshold: 0,
       highVelocityThreshold: 0,
       highEngagementThreshold: 0,
@@ -455,6 +487,12 @@ export function getBenchmarkSummary(videos: Video[]): BenchmarkSummary {
         0.5
       )
     ),
+    medianEngagementRate: Number(
+      getPercentile(
+        enrichedVideos.map((video) => video.engagementRate),
+        0.5
+      ).toFixed(3)
+    ),
     highBreakoutThreshold: Math.round(
       getPercentile(
         enrichedVideos.map((video) => video.breakoutScore),
@@ -472,6 +510,29 @@ export function getBenchmarkSummary(videos: Video[]): BenchmarkSummary {
         enrichedVideos.map((video) => video.engagementRate),
         0.75
       ).toFixed(3)
+    ),
+  };
+}
+
+export function getCreatorBenchmarkStatus(
+  creatorAnalytics: CreatorAnalytics,
+  benchmarkSummary: BenchmarkSummary
+): CreatorBenchmarkStatus {
+  return {
+    breakoutStatus: getBenchmarkLevel(
+      creatorAnalytics.avgBreakoutScore,
+      benchmarkSummary.medianBreakoutScore,
+      benchmarkSummary.highBreakoutThreshold
+    ),
+    velocityStatus: getBenchmarkLevel(
+      creatorAnalytics.avgViewsPerHour,
+      benchmarkSummary.medianViewsPerHour,
+      benchmarkSummary.highVelocityThreshold
+    ),
+    engagementStatus: getBenchmarkLevel(
+      creatorAnalytics.avgEngagementRate,
+      benchmarkSummary.medianEngagementRate,
+      benchmarkSummary.highEngagementThreshold
     ),
   };
 }
