@@ -10,13 +10,14 @@ import {
   getCreatorLeaderboardEntry,
   getPatternSnapshot,
   getTopBreakoutScore,
+  getTopSignals,
   getWinningPatterns,
   matchesVideoFilter,
   normalizeYoutubeHandle,
   sortVideosByPerformance,
   type Creator,
   type CreatorLeaderboardEntry,
-  type PatternSnapshot,
+  type TopSignalVideo,
   type Video,
   type VideoFilter,
 } from "./lib/youtube-insights";
@@ -58,6 +59,42 @@ function DashboardStateCard({
           {actionLabel}
         </button>
       )}
+    </div>
+  );
+}
+
+type SignalCardProps = {
+  label: string;
+  video: TopSignalVideo | null;
+  metricLabel: string;
+  metricValue: string;
+};
+
+function SignalCard({
+  label,
+  video,
+  metricLabel,
+  metricValue,
+}: SignalCardProps) {
+  if (!video) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+      <p className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-2 line-clamp-2 text-sm font-semibold text-white">
+        {video.title || "Untitled video"}
+      </p>
+      <p className="mt-1 text-xs text-zinc-500">
+        {video.channelTitle || "Tracked YouTube creator"}
+      </p>
+      <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/70 px-3 py-2">
+        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+          {metricLabel}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-white">{metricValue}</p>
+      </div>
     </div>
   );
 }
@@ -325,6 +362,7 @@ export default function Home() {
     )
   );
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
+  const topSignals = getTopSignals(visibleFilteredVideos);
   const analystTakeaways = getAnalystTakeaways(
     visibleFilteredVideos,
     creators,
@@ -486,6 +524,43 @@ export default function Home() {
               ))}
             </div>
           </div>
+
+          {visibleFilteredVideos.length > 0 && (
+            <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              <SignalCard
+                label="Top Breakout"
+                video={topSignals.topBreakoutVideo}
+                metricLabel="Breakout Score"
+                metricValue={formatCompactNumber(
+                  topSignals.topBreakoutVideo?.breakoutScore
+                )}
+              />
+              <SignalCard
+                label="Fastest Rising"
+                video={topSignals.fastestVideo}
+                metricLabel="Views / Hour"
+                metricValue={formatCompactNumber(
+                  topSignals.fastestVideo?.viewsPerHour
+                )}
+              />
+              <SignalCard
+                label="Best Engagement"
+                video={topSignals.mostEngagingVideo}
+                metricLabel="Engagement Rate"
+                metricValue={`${(
+                  (topSignals.mostEngagingVideo?.engagementRate ?? 0) * 100
+                ).toFixed(1)}%`}
+              />
+              <SignalCard
+                label="Strongest Comments"
+                video={topSignals.strongestCommentVideo}
+                metricLabel="Comments"
+                metricValue={formatCompactNumber(
+                  topSignals.strongestCommentVideo?.commentCount
+                )}
+              />
+            </div>
+          )}
 
           {!breakoutLoading && creatorLeaderboard.length > 0 && (
             <div className="mb-6 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">

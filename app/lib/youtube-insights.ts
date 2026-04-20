@@ -72,6 +72,19 @@ export type CreatorAnalytics = {
   consistencyScore: number;
 };
 
+export type TopSignalVideo = Video & {
+  viewsPerHour: number;
+  engagementRate: number;
+  commentDensity: number;
+};
+
+export type TopSignals = {
+  topBreakoutVideo: TopSignalVideo | null;
+  fastestVideo: TopSignalVideo | null;
+  mostEngagingVideo: TopSignalVideo | null;
+  strongestCommentVideo: TopSignalVideo | null;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -82,6 +95,32 @@ type CreatorVideoSummary = {
 
 function getSafeNumber(value?: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function enrichVideoMetrics(video: Video): TopSignalVideo {
+  const breakoutScore = calculateBreakoutScore(video);
+  const viewCount = getSafeNumber(video.viewCount);
+  const likeCount = getSafeNumber(video.likeCount);
+  const commentCount = getSafeNumber(video.commentCount);
+  const hoursSincePublished = getHoursSincePublished(
+    video.publishedAt,
+    video.currentTimestamp
+  );
+  const engagementRate =
+    viewCount > 0 ? (likeCount + commentCount) / viewCount : 0;
+  const commentDensity = viewCount > 0 ? commentCount / viewCount : 0;
+
+  return {
+    ...video,
+    breakoutScore,
+    breakoutReason: getBreakoutReason({
+      ...video,
+      breakoutScore,
+    }),
+    viewsPerHour: viewCount / hoursSincePublished,
+    engagementRate,
+    commentDensity,
+  };
 }
 
 export function formatPublishedTime(publishedAt: string) {
@@ -150,26 +189,14 @@ export function aggregateCreatorStats(videos: Video[]): CreatorAnalytics {
   }
 
   const aggregatedVideos = videos.map((video) => {
-    const computedBreakoutScore = calculateBreakoutScore(video);
-    const computedBreakoutReason = getBreakoutReason({
-      ...video,
-      breakoutScore: computedBreakoutScore,
-    });
-    const safeViewCount = getSafeNumber(video.viewCount);
-    const safeLikeCount = getSafeNumber(video.likeCount);
-    const safeCommentCount = getSafeNumber(video.commentCount);
-    const viewsPerHour =
-      safeViewCount /
-      getHoursSincePublished(video.publishedAt, video.currentTimestamp);
+    const enrichedVideo = enrichVideoMetrics(video);
 
     return {
-      ...video,
-      breakoutScore: computedBreakoutScore,
-      breakoutReason: computedBreakoutReason,
-      safeViewCount,
-      safeLikeCount,
-      safeCommentCount,
-      viewsPerHour,
+      ...enrichedVideo,
+      safeViewCount: getSafeNumber(enrichedVideo.viewCount),
+      safeLikeCount: getSafeNumber(enrichedVideo.likeCount),
+      safeCommentCount: getSafeNumber(enrichedVideo.commentCount),
+      viewsPerHour: enrichedVideo.viewsPerHour,
     };
   });
 
@@ -302,6 +329,71 @@ export function getPatternSnapshot(videos: Video[]): PatternSnapshot {
     averageViews: Math.round(totalViews / videos.length),
     averageBreakoutScore: Math.round(totalBreakoutScore / videos.length),
     mostCommonReason,
+  };
+}
+
+export function getTopSignals(videos: Video[]): TopSignals {
+  if (videos.length === 0) {
+    return {
+      topBreakoutVideo: null,
+      fastestVideo: null,
+      mostEngagingVideo: null,
+      strongestCommentVideo: null,
+    };
+  }
+
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+
+  const getTopVideo = (
+    compare: (leftVideo: TopSignalVideo, rightVideo: TopSignalVideo) => number
+  ) => {
+    return enrichedVideos.reduce((topVideo, video) => {
+      if (!topVideo) {
+        return video;
+      }
+
+      return compare(video, topVideo) > 0 ? video : topVideo;
+    }, null as TopSignalVideo | null);
+  };
+
+  return {
+    topBreakoutVideo: getTopVideo((leftVideo, rightVideo) => {
+      const breakoutDelta = leftVideo.breakoutScore - rightVideo.breakoutScore;
+
+      if (breakoutDelta !== 0) {
+        return breakoutDelta;
+      }
+
+      return getSafeNumber(leftVideo.viewCount) - getSafeNumber(rightVideo.viewCount);
+    }),
+    fastestVideo: getTopVideo((leftVideo, rightVideo) => {
+      const velocityDelta = leftVideo.viewsPerHour - rightVideo.viewsPerHour;
+
+      if (velocityDelta !== 0) {
+        return velocityDelta;
+      }
+
+      return leftVideo.breakoutScore - rightVideo.breakoutScore;
+    }),
+    mostEngagingVideo: getTopVideo((leftVideo, rightVideo) => {
+      const engagementDelta = leftVideo.engagementRate - rightVideo.engagementRate;
+
+      if (engagementDelta !== 0) {
+        return engagementDelta;
+      }
+
+      return getSafeNumber(leftVideo.likeCount) - getSafeNumber(rightVideo.likeCount);
+    }),
+    strongestCommentVideo: getTopVideo((leftVideo, rightVideo) => {
+      const commentDelta =
+        getSafeNumber(leftVideo.commentCount) - getSafeNumber(rightVideo.commentCount);
+
+      if (commentDelta !== 0) {
+        return commentDelta;
+      }
+
+      return leftVideo.commentDensity - rightVideo.commentDensity;
+    }),
   };
 }
 
