@@ -83,7 +83,6 @@ export function calculateBreakoutScore({
     velocityWeight,
     viewGrowthWeight,
   } = INTELLIGENCE_THRESHOLDS.breakout;
-  const { hoursPerDay, minimumVideoAgeDays } = INTELLIGENCE_THRESHOLDS.time;
   const safeViewCount = getSafeNonNegativeNumber(viewCount);
   const safeLikeCount = getSafeNonNegativeNumber(likeCount);
   const safeCommentCount = getSafeNonNegativeNumber(commentCount);
@@ -91,10 +90,6 @@ export function calculateBreakoutScore({
     typeof currentTimestamp === "number" && Number.isFinite(currentTimestamp)
       ? currentTimestamp
       : Date.now();
-  const ageInDays = Math.max(
-    MIN_DIVISOR / hoursPerDay,
-    getAgeInDays(publishedAt, safeCurrentTimestamp, minimumVideoAgeDays)
-  );
   const hoursSincePublished = getHoursSincePublished(
     publishedAt,
     safeCurrentTimestamp

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import {
   aggregateCreatorStats,
   buildInsightExportPayload,
@@ -47,6 +48,11 @@ import {
   type Video,
   type VideoFilter,
 } from "./lib/youtube-insights";
+import {
+  type CreatorTrendRow,
+  type RadarHistoryView,
+  type SnapshotMetricDelta,
+} from "./lib/radar-history";
 import { supabase } from "./lib/supabase";
 
 type LeaderboardSortMode =
@@ -147,6 +153,53 @@ function formatLastUpdated(timestamp: number | null) {
     hour: "numeric",
     minute: "2-digit",
   }).format(new Date(timestamp));
+}
+
+function formatSignedDelta(
+  value: number | null,
+  formatter: (value: number) => string = formatCompactNumber
+) {
+  if (value === null || !Number.isFinite(value)) {
+    return "No baseline";
+  }
+
+  if (value === 0) {
+    return "Flat";
+  }
+
+  return `${value > 0 ? "+" : ""}${formatter(value)}`;
+}
+
+function getDeltaTone(value: number | null) {
+  if (value === null || value === 0) {
+    return "text-zinc-400";
+  }
+
+  return value > 0 ? "text-emerald-300" : "text-red-300";
+}
+
+function formatMetricDelta(
+  metric: SnapshotMetricDelta,
+  formatter: (value: number) => string = formatCompactNumber
+) {
+  return {
+    current: formatter(metric.current),
+    delta: formatSignedDelta(metric.delta, formatter),
+    toneClassName: getDeltaTone(metric.delta),
+  };
+}
+
+function formatSnapshotTimestamp(value: string | null) {
+  if (!value) {
+    return "Not available";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }
 
 type DashboardStateCardProps = {
@@ -604,6 +657,9 @@ export default function Home() {
   const [youtubeLastUpdatedAt, setYoutubeLastUpdatedAt] = useState<number | null>(
     null
   );
+  const [history, setHistory] = useState<RadarHistoryView | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [historyErrorMessage, setHistoryErrorMessage] = useState("");
 
   async function loadCreators() {
     try {
@@ -697,8 +753,39 @@ export default function Home() {
     }
   }
 
+  async function loadHistory() {
+    try {
+      setHistoryLoading(true);
+      setHistoryErrorMessage("");
+
+      const response = await fetch("/api/radar/history", { cache: "no-store" });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        history?: RadarHistoryView;
+      };
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load stored snapshot history.");
+      }
+
+      setHistory(data.history ?? null);
+    } catch (error) {
+      console.error("Error loading radar history:", error);
+      setHistoryErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Unable to load stored snapshot history."
+      );
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
   useEffect(() => {
-    loadCreators();
+    queueMicrotask(() => {
+      void loadCreators();
+      void loadHistory();
+    });
   }, []);
 
   useEffect(() => {
@@ -708,11 +795,15 @@ export default function Home() {
     );
 
     if (youtubeCreators.length > 0) {
-      loadBreakoutPosts(youtubeCreators);
+      queueMicrotask(() => {
+        void loadBreakoutPosts(youtubeCreators);
+      });
     } else {
-      setBreakoutPosts({});
-      setYoutubeErrorMessage("");
-      setYoutubeLastUpdatedAt(null);
+      queueMicrotask(() => {
+        setBreakoutPosts({});
+        setYoutubeErrorMessage("");
+        setYoutubeLastUpdatedAt(null);
+      });
     }
   }, [creators]);
 
@@ -780,6 +871,62 @@ export default function Home() {
     setDeletingId(null);
   }
 
+  async function runManualRefresh() {
+    if (breakoutLoading) {
+      return;
+    }
+
+    try {
+      setBreakoutLoading(true);
+      setYoutubeErrorMessage("");
+      setHistoryLoading(true);
+      setHistoryErrorMessage("");
+
+      const response = await fetch("/api/radar/refresh", {
+        method: "POST",
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        refresh?: {
+          status: "success" | "partial" | "failed";
+          breakoutPosts: Record<number, Video[]>;
+          history: RadarHistoryView | null;
+          creators: Array<{ creatorName: string; fetchStatus: "success" | "failed" }>;
+        };
+      };
+
+      if (!response.ok || !data.refresh) {
+        throw new Error(data.error || "Manual radar refresh failed.");
+      }
+
+      setBreakoutPosts(data.refresh.breakoutPosts ?? {});
+      setYoutubeLastUpdatedAt(Date.now());
+      setHistory(data.refresh.history ?? null);
+
+      const failedCreators = data.refresh.creators.filter(
+        (creator) => creator.fetchStatus === "failed"
+      );
+
+      if (failedCreators.length > 0) {
+        setYoutubeErrorMessage(
+          failedCreators.length === data.refresh.creators.length
+            ? "The refresh completed, but every tracked YouTube creator failed to return usable data."
+            : `The refresh persisted successfully, but ${failedCreators.length} creator fetch${failedCreators.length === 1 ? "" : "es"} failed.`
+        );
+      }
+    } catch (error) {
+      console.error("Error running manual radar refresh:", error);
+      setYoutubeErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Manual radar refresh failed."
+      );
+    } finally {
+      setHistoryLoading(false);
+      setBreakoutLoading(false);
+    }
+  }
+
   const youtubeCreators = useMemo(() => {
     return creators.filter(
       (creator) =>
@@ -803,54 +950,49 @@ export default function Home() {
     }, 0);
   }, [creatorVideosById, youtubeCreators]);
 
-  const leaderboardSortValue = (entry: CreatorLeaderboardEntry) => {
-    if (leaderboardSortMode === "Breakout Rate") {
-      return entry.breakoutRate;
-    }
-
-    if (leaderboardSortMode === "Views/Hour") {
-      return entry.avgViewsPerHour;
-    }
-
-    if (leaderboardSortMode === "Recent Views") {
-      return entry.totalRecentViews;
-    }
-
-    return entry.averageBreakoutScore;
-  };
-
-  const sortCreatorLeaderboard = (
-    leftCreator: CreatorLeaderboardEntry,
-    rightCreator: CreatorLeaderboardEntry
-  ) => {
-    const sortValueDifference =
-      leaderboardSortValue(rightCreator) - leaderboardSortValue(leftCreator);
-
-    if (sortValueDifference !== 0) {
-      return sortValueDifference;
-    }
-
-    if (rightCreator.averageBreakoutScore !== leftCreator.averageBreakoutScore) {
-      return rightCreator.averageBreakoutScore - leftCreator.averageBreakoutScore;
-    }
-
-    if (rightCreator.breakoutRate !== leftCreator.breakoutRate) {
-      return rightCreator.breakoutRate - leftCreator.breakoutRate;
-    }
-
-    if (rightCreator.totalRecentViews !== leftCreator.totalRecentViews) {
-      return rightCreator.totalRecentViews - leftCreator.totalRecentViews;
-    }
-
-    return leftCreator.creatorName.localeCompare(rightCreator.creatorName);
-  };
-
   const creatorLeaderboard = useMemo(() => {
     return youtubeCreators
       .map((creator) =>
         getCreatorLeaderboardEntry(creator, creatorVideosById[creator.id] ?? [])
       )
-      .sort(sortCreatorLeaderboard);
+      .sort((leftCreator, rightCreator) => {
+        const leaderboardSortValue = (entry: CreatorLeaderboardEntry) => {
+          if (leaderboardSortMode === "Breakout Rate") {
+            return entry.breakoutRate;
+          }
+
+          if (leaderboardSortMode === "Views/Hour") {
+            return entry.avgViewsPerHour;
+          }
+
+          if (leaderboardSortMode === "Recent Views") {
+            return entry.totalRecentViews;
+          }
+
+          return entry.averageBreakoutScore;
+        };
+
+        const sortValueDifference =
+          leaderboardSortValue(rightCreator) - leaderboardSortValue(leftCreator);
+
+        if (sortValueDifference !== 0) {
+          return sortValueDifference;
+        }
+
+        if (rightCreator.averageBreakoutScore !== leftCreator.averageBreakoutScore) {
+          return rightCreator.averageBreakoutScore - leftCreator.averageBreakoutScore;
+        }
+
+        if (rightCreator.breakoutRate !== leftCreator.breakoutRate) {
+          return rightCreator.breakoutRate - leftCreator.breakoutRate;
+        }
+
+        if (rightCreator.totalRecentViews !== leftCreator.totalRecentViews) {
+          return rightCreator.totalRecentViews - leftCreator.totalRecentViews;
+        }
+
+        return leftCreator.creatorName.localeCompare(rightCreator.creatorName);
+      });
   }, [creatorVideosById, leaderboardSortMode, youtubeCreators]);
 
   const creatorAnalyticsById = useMemo(() => {
@@ -1074,9 +1216,43 @@ export default function Home() {
     winningPatterns,
   ]);
 
+  const snapshotComparison = history?.comparison ?? null;
+  const snapshotHealth = history?.health ?? null;
+  const creatorTrendRows = history?.creatorTrends ?? [];
+  const recentSnapshots = history?.recentSnapshots ?? [];
+  const refreshStatusLabel = snapshotHealth?.lastSnapshotStatus ?? "No snapshots";
+  const refreshRunTypeLabel = snapshotHealth?.lastRunType ?? "manual";
+  const historySummaryText = historyErrorMessage
+    ? historyErrorMessage
+    : snapshotHealth?.summary ??
+      "Snapshot history will appear after the first persisted refresh.";
+  const historyComparisonCards = snapshotComparison
+    ? [
+        {
+          label: "Video Count",
+          metric: formatMetricDelta(snapshotComparison.videoCount),
+        },
+        {
+          label: "Avg Breakout",
+          metric: formatMetricDelta(snapshotComparison.averageBreakoutScore),
+        },
+        {
+          label: "Median Views",
+          metric: formatMetricDelta(snapshotComparison.medianViews),
+        },
+        {
+          label: "Median Views/Hour",
+          metric: formatMetricDelta(snapshotComparison.medianViewsPerHour),
+        },
+        {
+          label: "Creator Coverage",
+          metric: formatMetricDelta(snapshotComparison.creatorCoveragePercent, (value) => `${value}%`),
+        },
+      ]
+    : [];
   const retryYoutubeFetch = () => {
-    if (!breakoutLoading && youtubeCreators.length > 0) {
-      loadBreakoutPosts(youtubeCreators);
+    if (youtubeCreators.length > 0) {
+      void runManualRefresh();
     }
   };
 
@@ -1120,35 +1296,39 @@ export default function Home() {
 
   useEffect(() => {
     if (comparableCreators.length < 2) {
-      setLeftComparedCreatorId(null);
-      setRightComparedCreatorId(null);
+      queueMicrotask(() => {
+        setLeftComparedCreatorId(null);
+        setRightComparedCreatorId(null);
+      });
       return;
     }
 
     const defaultLeftId = comparableCreators[0]?.creatorId ?? null;
     const defaultRightId = comparableCreators[1]?.creatorId ?? null;
 
-    setLeftComparedCreatorId((currentId) => {
-      if (
-        currentId !== null &&
-        comparableCreators.some((creator) => creator.creatorId === currentId)
-      ) {
-        return currentId;
-      }
+    queueMicrotask(() => {
+      setLeftComparedCreatorId((currentId) => {
+        if (
+          currentId !== null &&
+          comparableCreators.some((creator) => creator.creatorId === currentId)
+        ) {
+          return currentId;
+        }
 
-      return defaultLeftId;
-    });
+        return defaultLeftId;
+      });
 
-    setRightComparedCreatorId((currentId) => {
-      if (
-        currentId !== null &&
-        currentId !== leftComparedCreatorId &&
-        comparableCreators.some((creator) => creator.creatorId === currentId)
-      ) {
-        return currentId;
-      }
+      setRightComparedCreatorId((currentId) => {
+        if (
+          currentId !== null &&
+          currentId !== leftComparedCreatorId &&
+          comparableCreators.some((creator) => creator.creatorId === currentId)
+        ) {
+          return currentId;
+        }
 
-      return defaultRightId;
+        return defaultRightId;
+      });
     });
   }, [comparableCreators, leftComparedCreatorId]);
 
@@ -1471,6 +1651,130 @@ export default function Home() {
             </div>
           </div>
 
+          <div className="mb-6 grid gap-4 lg:grid-cols-3">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    Snapshot Health
+                  </h3>
+                  <p className="text-sm text-zinc-400">
+                    Stored history coverage for snapshot-based comparisons
+                  </p>
+                </div>
+                <span className="rounded-full bg-zinc-950 px-3 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                  {historyLoading
+                    ? "Loading"
+                    : snapshotHealth?.hasEnoughHistory
+                      ? "Ready"
+                      : "Warming Up"}
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    Snapshots
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">
+                    {snapshotHealth?.snapshotCount ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    Last Successful
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">
+                    {formatSnapshotTimestamp(snapshotHealth?.lastSuccessfulSnapshotAt ?? null)}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-4 text-sm text-zinc-300">{historySummaryText}</p>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    Refresh Status
+                  </h3>
+                  <p className="text-sm text-zinc-400">
+                    Latest persisted radar run across manual and scheduled refreshes
+                  </p>
+                </div>
+                <span className="rounded-full bg-zinc-950 px-3 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                  {refreshStatusLabel}
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    Last Refresh
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-white">
+                    {formatSnapshotTimestamp(snapshotHealth?.lastRefreshAt ?? null)}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    Run Type
+                  </p>
+                  <p className="mt-1 text-sm font-semibold capitalize text-white">
+                    {refreshRunTypeLabel}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-4 text-sm text-zinc-300">
+                Snapshot comparisons are labeled from stored runs, not real-time streaming data.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">
+                    Since Last Snapshot
+                  </h3>
+                  <p className="text-sm text-zinc-400">
+                    Current snapshot versus the previous usable historical baseline
+                  </p>
+                </div>
+                <span className="rounded-full bg-zinc-950 px-3 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                  {snapshotComparison?.available ? "Comparison Ready" : "No Baseline"}
+                </span>
+              </div>
+
+              {snapshotComparison?.available ? (
+                <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {historyComparisonCards.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"
+                    >
+                      <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                        {item.label}
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-white">
+                        {item.metric.current}
+                      </p>
+                      <p className={`mt-1 text-xs ${item.metric.toneClassName}`}>
+                        {item.metric.delta}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
+                  {snapshotComparison?.summary ??
+                    "Run another persisted refresh to unlock historical comparisons."}
+                </div>
+              )}
+            </div>
+          </div>
+
           {visibleFilteredVideos.length > 0 && (
             <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {scenarioViewData.emphasizeEngagement ? (
@@ -1680,6 +1984,136 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+          <div className="mb-6 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Creator History / Trend
+                </h3>
+                <p className="text-sm text-zinc-400">
+                  Snapshot-based change tracking for the strongest creators in the latest stored run
+                </p>
+              </div>
+
+              {creatorTrendRows.length > 0 ? (
+                <div className="space-y-3">
+                  {creatorTrendRows.map((row: CreatorTrendRow) => (
+                    <div
+                      key={`${row.creatorId ?? row.creatorName}`}
+                      className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4"
+                    >
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            {row.creatorName}
+                          </p>
+                          <p className="text-xs text-zinc-500">
+                            Snapshot-based trend versus the previous stored run
+                          </p>
+                        </div>
+                        <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                          {row.momentumLabel}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                            Avg Breakout
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {formatCompactNumber(row.current.averageBreakoutScore)}
+                          </p>
+                          <p className={`mt-1 text-xs ${getDeltaTone(row.delta.averageBreakoutScore)}`}>
+                            {formatSignedDelta(row.delta.averageBreakoutScore)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                            Breakout Rate
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {row.current.breakoutRate}%
+                          </p>
+                          <p className={`mt-1 text-xs ${getDeltaTone(row.delta.breakoutRate)}`}>
+                            {formatSignedDelta(row.delta.breakoutRate, (value) => `${value}%`)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                            Views / Hour
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {formatCompactNumber(row.current.avgViewsPerHour)}
+                          </p>
+                          <p className={`mt-1 text-xs ${getDeltaTone(row.delta.avgViewsPerHour)}`}>
+                            {formatSignedDelta(row.delta.avgViewsPerHour)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                            Recent Views
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {formatCompactNumber(row.current.totalRecentViews)}
+                          </p>
+                          <p className={`mt-1 text-xs ${getDeltaTone(row.delta.totalRecentViews)}`}>
+                            {formatSignedDelta(row.delta.totalRecentViews)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
+                  Another persisted snapshot is needed before creator trend deltas can be shown here.
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-white">
+                  Recent Snapshots
+                </h3>
+                <p className="text-sm text-zinc-400">
+                  Most recent stored refresh runs for the radar system
+                </p>
+              </div>
+
+              {recentSnapshots.length > 0 ? (
+                <div className="space-y-3">
+                  {recentSnapshots.map((snapshot) => (
+                    <div
+                      key={snapshot.id}
+                      className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="text-sm font-semibold text-white">
+                          {formatSnapshotTimestamp(snapshot.createdAt)}
+                        </p>
+                        <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                          {snapshot.status}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-xs text-zinc-500">
+                        {snapshot.runType} run
+                      </p>
+                      <p className="mt-2 text-sm text-zinc-300">
+                        {snapshot.creatorCount} creators tracked • {snapshot.videoCount} videos stored
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
+                  No snapshots have been stored yet. Use Refresh Analytics to create the first historical baseline.
+                </div>
+              )}
+            </div>
+          </div>
 
           {!breakoutLoading && creatorLeaderboard.length > 0 && (
             <div className="mb-6 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
@@ -2269,11 +2703,15 @@ export default function Home() {
                               >
                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                                   {video.thumbnail && (
-                                    <img
-                                      src={video.thumbnail}
-                                      alt={video.title}
-                                      className="h-24 w-full rounded-lg object-cover sm:w-44"
-                                    />
+                                    <div className="relative h-24 w-full overflow-hidden rounded-lg sm:w-44">
+                                      <Image
+                                        src={video.thumbnail}
+                                        alt={video.title}
+                                        fill
+                                        sizes="(max-width: 640px) 100vw, 176px"
+                                        className="object-cover"
+                                      />
+                                    </div>
                                   )}
 
                                   <div className="flex-1">
