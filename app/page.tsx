@@ -387,6 +387,9 @@ export default function Home() {
   const [breakoutLoading, setBreakoutLoading] = useState(false);
   const [youtubeErrorMessage, setYoutubeErrorMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [copyPayloadState, setCopyPayloadState] = useState<
+    "idle" | "copied" | "failed"
+  >("idle");
   const [videoFilter, setVideoFilter] = useState<VideoFilter>("All");
   const [scenarioMode, setScenarioMode] = useState<ScenarioMode>("Balanced");
   const [leaderboardSortMode, setLeaderboardSortMode] =
@@ -789,9 +792,33 @@ export default function Home() {
     }
   };
 
-  const logInsightPayload = () => {
-    console.log("INSIGHT_PAYLOAD", insightExportPayload);
+  const copyInsightPayload = async () => {
+    try {
+      if (!navigator?.clipboard?.writeText) {
+        throw new Error("Clipboard unavailable");
+      }
+
+      await navigator.clipboard.writeText(
+        JSON.stringify(insightExportPayload, null, 2)
+      );
+      setCopyPayloadState("copied");
+    } catch (error) {
+      console.error("Failed to copy insight payload:", error);
+      setCopyPayloadState("failed");
+    }
   };
+
+  useEffect(() => {
+    if (copyPayloadState === "idle") {
+      return;
+    }
+
+    const resetTimeout = window.setTimeout(() => {
+      setCopyPayloadState("idle");
+    }, 1800);
+
+    return () => window.clearTimeout(resetTimeout);
+  }, [copyPayloadState]);
 
   const applySavedView = (preset: SavedViewPreset) => {
     setVideoFilter(preset.videoFilter);
@@ -978,10 +1005,20 @@ export default function Home() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={logInsightPayload}
-                className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                onClick={copyInsightPayload}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  copyPayloadState === "copied"
+                    ? "bg-emerald-500/15 text-emerald-300"
+                    : copyPayloadState === "failed"
+                      ? "bg-red-500/15 text-red-300"
+                      : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                }`}
               >
-                Log Insight Payload
+                {copyPayloadState === "copied"
+                  ? "Copied"
+                  : copyPayloadState === "failed"
+                    ? "Copy failed"
+                    : "Copy Insight Payload"}
               </button>
               {videoFilterOptions.map((option) => (
                 <button
