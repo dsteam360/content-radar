@@ -178,6 +178,12 @@ export type CreatorDiversificationSummary = {
   summary: string;
 };
 
+export type SignalShiftSummary = {
+  changed: boolean;
+  headline: string;
+  bullets: string[];
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -600,6 +606,151 @@ export function getCreatorDiversificationSummary(
     creatorShareLeader: leaderEntry[0],
     leaderSharePercent,
     summary: `${leaderEntry[0]} is supplying most of the visible opportunities, so the current read is fairly concentrated.`,
+  };
+}
+
+export function getSignalShiftSummary(
+  currentVideos: Video[],
+  baselineVideos: Video[]
+): SignalShiftSummary {
+  const { smallSampleMaximumVideos, maxInsightItems } =
+    INTELLIGENCE_THRESHOLDS.analysis;
+  const { millisecondsPerSecond, recentWindowDays } = INTELLIGENCE_THRESHOLDS.time;
+
+  if (
+    baselineVideos.length <= smallSampleMaximumVideos ||
+    currentVideos.length <= smallSampleMaximumVideos
+  ) {
+    return {
+      changed: false,
+      headline: "No meaningful signal shift",
+      bullets: [],
+    };
+  }
+
+  const baselineEnriched = baselineVideos.map(enrichVideoMetrics);
+  const currentEnriched = currentVideos.map(enrichVideoMetrics);
+
+  const getAverage = (
+    videos: TopSignalVideo[],
+    selector: (video: TopSignalVideo) => number
+  ) => {
+    if (videos.length === 0) {
+      return 0;
+    }
+
+    return videos.reduce((sum, video) => sum + selector(video), 0) / videos.length;
+  };
+
+  const getRecentShare = (videos: TopSignalVideo[]) => {
+    if (videos.length === 0) {
+      return 0;
+    }
+
+    const recentVideos = videos.filter((video) => {
+      const publishedTime = new Date(video.publishedAt).getTime();
+      const ageInDays = Math.max(
+        0,
+        (Date.now() - publishedTime) /
+          (millisecondsPerSecond *
+            INTELLIGENCE_THRESHOLDS.time.secondsPerMinute *
+            INTELLIGENCE_THRESHOLDS.time.minutesPerHour *
+            INTELLIGENCE_THRESHOLDS.time.hoursPerDay)
+      );
+
+      return ageInDays <= recentWindowDays;
+    });
+
+    return recentVideos.length / videos.length;
+  };
+
+  const baselineBreakout = getAverage(
+    baselineEnriched,
+    (video) => video.breakoutScore
+  );
+  const currentBreakout = getAverage(
+    currentEnriched,
+    (video) => video.breakoutScore
+  );
+  const baselineEngagement = getAverage(
+    baselineEnriched,
+    (video) => video.engagementRate
+  );
+  const currentEngagement = getAverage(
+    currentEnriched,
+    (video) => video.engagementRate
+  );
+  const baselineVelocity = getAverage(
+    baselineEnriched,
+    (video) => video.viewsPerHour
+  );
+  const currentVelocity = getAverage(
+    currentEnriched,
+    (video) => video.viewsPerHour
+  );
+  const baselineRecentShare = getRecentShare(baselineEnriched);
+  const currentRecentShare = getRecentShare(currentEnriched);
+  const baselineDiversification = getCreatorDiversificationSummary(baselineVideos);
+  const currentDiversification = getCreatorDiversificationSummary(currentVideos);
+
+  const bullets: string[] = [];
+  const breakoutDelta = currentBreakout - baselineBreakout;
+  const engagementDelta = currentEngagement - baselineEngagement;
+  const velocityDelta = currentVelocity - baselineVelocity;
+  const concentrationDelta =
+    currentDiversification.leaderSharePercent -
+    baselineDiversification.leaderSharePercent;
+  const recencyDelta = currentRecentShare - baselineRecentShare;
+
+  if (Math.abs(breakoutDelta) >= 5) {
+    bullets.push(
+      breakoutDelta > 0
+        ? `Average breakout strength is up ${Math.round(breakoutDelta)} points versus the broader set.`
+        : `Average breakout strength is down ${Math.round(Math.abs(breakoutDelta))} points versus the broader set.`
+    );
+  }
+
+  if (Math.abs(engagementDelta) >= 0.01) {
+    bullets.push(
+      engagementDelta > 0
+        ? "The current view is leaning into stronger engagement density."
+        : "The current view is leaning away from the strongest engagement signals."
+    );
+  }
+
+  if (Math.abs(velocityDelta) >= Math.max(100, baselineVelocity * 0.2)) {
+    bullets.push(
+      velocityDelta > 0
+        ? "Views per hour moved higher, so the current view is emphasizing faster-rising videos."
+        : "Views per hour moved lower, so the current view is less momentum-heavy than the baseline."
+    );
+  }
+
+  if (Math.abs(concentrationDelta) >= 15) {
+    bullets.push(
+      concentrationDelta > 0
+        ? "Creator concentration increased, so fewer creators are shaping this read."
+        : "Creator concentration eased, so the visible opportunity set is more diversified."
+    );
+  }
+
+  if (Math.abs(recencyDelta) >= 0.2) {
+    bullets.push(
+      recencyDelta > 0
+        ? "More recent uploads now dominate the visible set."
+        : "The current view is pulling in a less freshness-driven mix."
+    );
+  }
+
+  const uniqueBullets = bullets.slice(0, maxInsightItems);
+
+  return {
+    changed: uniqueBullets.length > 0,
+    headline:
+      uniqueBullets.length > 0
+        ? "This view is changing the signal mix"
+        : "No meaningful signal shift",
+    bullets: uniqueBullets,
   };
 }
 

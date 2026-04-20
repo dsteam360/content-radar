@@ -19,6 +19,7 @@ import {
   getOutlierAlerts,
   getPatternSnapshot,
   getScenarioViewData,
+  getSignalShiftSummary,
   getTopBreakoutScore,
   getTopSignals,
   getWatchlistCandidates,
@@ -35,6 +36,7 @@ import {
   type InsightConfidence,
   type OutlierAlert,
   type ScenarioMode,
+  type SignalShiftSummary,
   type TopSignalVideo,
   type Video,
   type VideoFilter,
@@ -314,6 +316,40 @@ function CreatorDiversificationCard({
       </div>
 
       <p className="mt-4 text-sm text-zinc-300">{diversification.summary}</p>
+    </div>
+  );
+}
+
+type SignalShiftCardProps = {
+  shiftSummary: SignalShiftSummary;
+};
+
+function SignalShiftCard({ shiftSummary }: SignalShiftCardProps) {
+  if (!shiftSummary.changed) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-white">Signal Shifts</h3>
+        <p className="text-sm text-gray-400">
+          What changed versus the broader filtered baseline
+        </p>
+      </div>
+
+      <p className="text-sm font-medium text-white">{shiftSummary.headline}</p>
+
+      <ul className="mt-4 space-y-3 text-sm text-zinc-200">
+        {shiftSummary.bullets.map((bullet) => (
+          <li
+            key={bullet}
+            className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
+          >
+            {bullet}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -627,6 +663,10 @@ export default function Home() {
   );
   const creatorDiversification = getCreatorDiversificationSummary(
     visibleFilteredVideos
+  );
+  const signalShiftSummary = getSignalShiftSummary(
+    visibleFilteredVideos,
+    baseVisibleFilteredVideos
   );
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
@@ -1383,6 +1423,8 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                <SignalShiftCard shiftSummary={signalShiftSummary} />
 
                 <CreatorDiversificationCard
                   diversification={creatorDiversification}
