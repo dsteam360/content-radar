@@ -104,6 +104,23 @@ export type CreatorBenchmarkStatus = {
   engagementStatus: BenchmarkStatus;
 };
 
+export type ComparisonWinner = "left" | "right" | "tie";
+
+export type CreatorComparisonMetric = {
+  leftValue: number;
+  rightValue: number;
+  winner: ComparisonWinner;
+};
+
+export type CreatorComparison = {
+  avgBreakoutScore: CreatorComparisonMetric;
+  breakoutRate: CreatorComparisonMetric;
+  avgViewsPerHour: CreatorComparisonMetric;
+  avgEngagementRate: CreatorComparisonMetric;
+  totalRecentViews: CreatorComparisonMetric;
+  topVideoBreakoutScore: CreatorComparisonMetric;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -146,6 +163,15 @@ function getBenchmarkLevel(
   }
 
   return "Below";
+}
+
+function compareMetric(leftValue: number, rightValue: number): CreatorComparisonMetric {
+  return {
+    leftValue,
+    rightValue,
+    winner:
+      leftValue === rightValue ? "tie" : leftValue > rightValue ? "left" : "right",
+  };
 }
 
 function enrichVideoMetrics(video: Video): TopSignalVideo {
@@ -533,6 +559,38 @@ export function getCreatorBenchmarkStatus(
       creatorAnalytics.avgEngagementRate,
       benchmarkSummary.medianEngagementRate,
       benchmarkSummary.highEngagementThreshold
+    ),
+  };
+}
+
+export function getCreatorComparison(
+  leftCreatorAnalytics: CreatorAnalytics,
+  rightCreatorAnalytics: CreatorAnalytics
+): CreatorComparison {
+  return {
+    avgBreakoutScore: compareMetric(
+      leftCreatorAnalytics.avgBreakoutScore,
+      rightCreatorAnalytics.avgBreakoutScore
+    ),
+    breakoutRate: compareMetric(
+      leftCreatorAnalytics.breakoutRate,
+      rightCreatorAnalytics.breakoutRate
+    ),
+    avgViewsPerHour: compareMetric(
+      leftCreatorAnalytics.avgViewsPerHour,
+      rightCreatorAnalytics.avgViewsPerHour
+    ),
+    avgEngagementRate: compareMetric(
+      leftCreatorAnalytics.avgEngagementRate,
+      rightCreatorAnalytics.avgEngagementRate
+    ),
+    totalRecentViews: compareMetric(
+      leftCreatorAnalytics.totalRecentViews,
+      rightCreatorAnalytics.totalRecentViews
+    ),
+    topVideoBreakoutScore: compareMetric(
+      leftCreatorAnalytics.topVideoBreakoutScore,
+      rightCreatorAnalytics.topVideoBreakoutScore
     ),
   };
 }

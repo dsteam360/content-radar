@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   aggregateCreatorStats,
   formatCompactNumber,
@@ -8,6 +8,7 @@ import {
   getAnalystTakeaways,
   getBenchmarkSummary,
   getBreakoutReason,
+  getCreatorComparison,
   getCreatorBenchmarkStatus,
   getCreatorLeaderboardEntry,
   getPatternSnapshot,
@@ -19,6 +20,7 @@ import {
   sortVideosByPerformance,
   type Creator,
   type CreatorBenchmarkStatus,
+  type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
   type TopSignalVideo,
   type Video,
@@ -124,6 +126,50 @@ function BenchmarkBadge({ label, status }: BenchmarkBadgeProps) {
   );
 }
 
+type ComparisonMetricRowProps = {
+  label: string;
+  metric: CreatorComparisonMetric;
+  formatter?: (value: number) => string;
+};
+
+function ComparisonMetricRow({
+  label,
+  metric,
+  formatter = (value) => value.toString(),
+}: ComparisonMetricRowProps) {
+  const getValueClasses = (winner: CreatorComparisonMetric["winner"]) => {
+    if (winner === "tie") {
+      return "text-white";
+    }
+
+    return winner === "left"
+      ? "text-emerald-300"
+      : "text-zinc-400";
+  };
+
+  const getRightValueClasses = (winner: CreatorComparisonMetric["winner"]) => {
+    if (winner === "tie") {
+      return "text-white";
+    }
+
+    return winner === "right"
+      ? "text-emerald-300"
+      : "text-zinc-400";
+  };
+
+  return (
+    <div className="grid grid-cols-[1fr,auto,auto] items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3">
+      <p className="text-sm text-zinc-300">{label}</p>
+      <p className={`text-sm font-semibold ${getValueClasses(metric.winner)}`}>
+        {formatter(metric.leftValue)}
+      </p>
+      <p className={`text-sm font-semibold ${getRightValueClasses(metric.winner)}`}>
+        {formatter(metric.rightValue)}
+      </p>
+    </div>
+  );
+}
+
 export default function Home() {
   type LeaderboardSortMode =
     | "Avg Breakout"
@@ -147,6 +193,12 @@ export default function Home() {
   const [videoFilter, setVideoFilter] = useState<VideoFilter>("All");
   const [leaderboardSortMode, setLeaderboardSortMode] =
     useState<LeaderboardSortMode>("Avg Breakout");
+  const [leftComparedCreatorId, setLeftComparedCreatorId] = useState<number | null>(
+    null
+  );
+  const [rightComparedCreatorId, setRightComparedCreatorId] = useState<number | null>(
+    null
+  );
 
   async function loadCreators() {
     try {
@@ -380,6 +432,14 @@ export default function Home() {
       )
     )
     .sort(sortCreatorLeaderboard);
+  const creatorAnalyticsById = useMemo(() => {
+    return Object.fromEntries(
+      youtubeCreators.map((creator) => [
+        creator.id,
+        aggregateCreatorStats(sortVideosByPerformance(breakoutPosts[creator.id] ?? [])),
+      ])
+    ) as Record<number, ReturnType<typeof aggregateCreatorStats>>;
+  }, [breakoutPosts, youtubeCreators]);
 
   const visibleFilteredVideos = youtubeCreators.flatMap((creator) =>
     sortVideosByPerformance(breakoutPosts[creator.id] ?? []).filter((video) =>
@@ -402,6 +462,21 @@ export default function Home() {
     videoFilter
   );
   const hasBenchmarkData = visibleFilteredVideos.length > 0;
+  const comparableCreators = creatorLeaderboard.filter((entry) => entry.videosAnalyzed > 0);
+  const selectedLeftCreator = youtubeCreators.find(
+    (creator) => creator.id === leftComparedCreatorId
+  );
+  const selectedRightCreator = youtubeCreators.find(
+    (creator) => creator.id === rightComparedCreatorId
+  );
+  const leftCreatorAnalytics =
+    leftComparedCreatorId !== null ? creatorAnalyticsById[leftComparedCreatorId] : null;
+  const rightCreatorAnalytics =
+    rightComparedCreatorId !== null ? creatorAnalyticsById[rightComparedCreatorId] : null;
+  const creatorComparison =
+    leftCreatorAnalytics && rightCreatorAnalytics
+      ? getCreatorComparison(leftCreatorAnalytics, rightCreatorAnalytics)
+      : null;
 
   const videoFilterOptions: VideoFilter[] = [
     "All",
@@ -419,6 +494,62 @@ export default function Home() {
   const retryYoutubeFetch = () => {
     if (!breakoutLoading && youtubeCreators.length > 0) {
       loadBreakoutPosts(youtubeCreators);
+    }
+  };
+
+  useEffect(() => {
+    if (comparableCreators.length < 2) {
+      setLeftComparedCreatorId(null);
+      setRightComparedCreatorId(null);
+      return;
+    }
+
+    const defaultLeftId = comparableCreators[0]?.creatorId ?? null;
+    const defaultRightId = comparableCreators[1]?.creatorId ?? null;
+
+    setLeftComparedCreatorId((currentId) => {
+      if (
+        currentId !== null &&
+        comparableCreators.some((creator) => creator.creatorId === currentId)
+      ) {
+        return currentId;
+      }
+
+      return defaultLeftId;
+    });
+
+    setRightComparedCreatorId((currentId) => {
+      if (
+        currentId !== null &&
+        currentId !== leftComparedCreatorId &&
+        comparableCreators.some((creator) => creator.creatorId === currentId)
+      ) {
+        return currentId;
+      }
+
+      return defaultRightId;
+    });
+  }, [comparableCreators, leftComparedCreatorId]);
+
+  const handleLeftCreatorChange = (creatorId: number) => {
+    setLeftComparedCreatorId(creatorId);
+
+    if (creatorId === rightComparedCreatorId) {
+      const fallbackCreator = comparableCreators.find(
+        (creator) => creator.creatorId !== creatorId
+      );
+      setRightComparedCreatorId(fallbackCreator?.creatorId ?? null);
+    }
+  };
+
+  const handleRightCreatorChange = (creatorId: number) => {
+    setRightComparedCreatorId(creatorId);
+
+    if (creatorId === leftComparedCreatorId) {
+      const fallbackCreator = comparableCreators.find(
+        (creator) => creator.creatorId !== creatorId
+      );
+      setLeftComparedCreatorId(fallbackCreator?.creatorId ?? null);
     }
   };
 
@@ -588,6 +719,105 @@ export default function Home() {
               />
             </div>
           )}
+
+          {comparableCreators.length >= 2 &&
+            selectedLeftCreator &&
+            selectedRightCreator &&
+            creatorComparison && (
+              <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">
+                      Compare Creators
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      Side-by-side benchmarking for the current tracked YouTube set
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <select
+                      value={leftComparedCreatorId ?? ""}
+                      onChange={(event) =>
+                        handleLeftCreatorChange(Number(event.target.value))
+                      }
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none"
+                    >
+                      {youtubeCreators.map((creator) => (
+                        <option
+                          key={creator.id}
+                          value={creator.id}
+                          disabled={creator.id === rightComparedCreatorId}
+                        >
+                          {creator.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={rightComparedCreatorId ?? ""}
+                      onChange={(event) =>
+                        handleRightCreatorChange(Number(event.target.value))
+                      }
+                      className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none"
+                    >
+                      {youtubeCreators.map((creator) => (
+                        <option
+                          key={creator.id}
+                          value={creator.id}
+                          disabled={creator.id === leftComparedCreatorId}
+                        >
+                          {creator.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="mb-3 grid grid-cols-[1fr,auto,auto] items-center gap-3 px-4">
+                  <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                    Metric
+                  </p>
+                  <p className="text-sm font-semibold text-white">
+                    {selectedLeftCreator.name}
+                  </p>
+                  <p className="text-sm font-semibold text-white">
+                    {selectedRightCreator.name}
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <ComparisonMetricRow
+                    label="Avg Breakout Score"
+                    metric={creatorComparison.avgBreakoutScore}
+                    formatter={formatCompactNumber}
+                  />
+                  <ComparisonMetricRow
+                    label="Breakout Rate"
+                    metric={creatorComparison.breakoutRate}
+                    formatter={(value) => `${value}%`}
+                  />
+                  <ComparisonMetricRow
+                    label="Avg Views / Hour"
+                    metric={creatorComparison.avgViewsPerHour}
+                    formatter={formatCompactNumber}
+                  />
+                  <ComparisonMetricRow
+                    label="Avg Engagement Rate"
+                    metric={creatorComparison.avgEngagementRate}
+                    formatter={(value) => `${(value * 100).toFixed(1)}%`}
+                  />
+                  <ComparisonMetricRow
+                    label="Recent Views"
+                    metric={creatorComparison.totalRecentViews}
+                    formatter={formatCompactNumber}
+                  />
+                  <ComparisonMetricRow
+                    label="Top Video Breakout"
+                    metric={creatorComparison.topVideoBreakoutScore}
+                    formatter={formatCompactNumber}
+                  />
+                </div>
+              </div>
+            )}
 
           {!breakoutLoading && creatorLeaderboard.length > 0 && (
             <div className="mb-6 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
