@@ -1,13 +1,4 @@
-type EnvKey =
-  | "NEXT_PUBLIC_SUPABASE_URL"
-  | "NEXT_PUBLIC_SUPABASE_ANON_KEY"
-  | "SUPABASE_SERVICE_ROLE_KEY"
-  | "YOUTUBE_API_KEY"
-  | "CRON_SECRET";
-
-function readEnvValue(key: EnvKey, context: string) {
-  const value = process.env[key];
-
+function requireEnvValue(value: string | undefined, key: string, context: string) {
   if (!value) {
     throw new Error(`Missing required environment variable ${key} for ${context}.`);
   }
@@ -17,8 +8,13 @@ function readEnvValue(key: EnvKey, context: string) {
 
 export function getPublicEnv() {
   return {
-    supabaseUrl: readEnvValue("NEXT_PUBLIC_SUPABASE_URL", "public Supabase client"),
-    supabaseAnonKey: readEnvValue(
+    supabaseUrl: requireEnvValue(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      "NEXT_PUBLIC_SUPABASE_URL",
+      "public Supabase client"
+    ),
+    supabaseAnonKey: requireEnvValue(
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
       "NEXT_PUBLIC_SUPABASE_ANON_KEY",
       "public Supabase client"
     ),
@@ -27,7 +23,11 @@ export function getPublicEnv() {
 
 export function getYoutubeEnv() {
   return {
-    youtubeApiKey: readEnvValue("YOUTUBE_API_KEY", "YouTube API requests"),
+    youtubeApiKey: requireEnvValue(
+      process.env.YOUTUBE_API_KEY,
+      "YOUTUBE_API_KEY",
+      "YouTube API requests"
+    ),
   };
 }
 
@@ -36,7 +36,8 @@ export function getSupabaseAdminEnv() {
 
   return {
     ...publicEnv,
-    serviceRoleKey: readEnvValue(
+    serviceRoleKey: requireEnvValue(
+      process.env.SUPABASE_SERVICE_ROLE_KEY,
       "SUPABASE_SERVICE_ROLE_KEY",
       "server-side snapshot persistence"
     ),
@@ -45,6 +46,10 @@ export function getSupabaseAdminEnv() {
 
 export function getCronEnv() {
   return {
-    cronSecret: readEnvValue("CRON_SECRET", "scheduled radar refresh"),
+    cronSecret: requireEnvValue(
+      process.env.CRON_SECRET,
+      "CRON_SECRET",
+      "scheduled radar refresh"
+    ),
   };
 }
