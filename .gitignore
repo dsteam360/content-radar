@@ -1,0 +1,118 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Toke Haus — .gitignore
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Environment / secrets — NEVER commit
+.env
+
+# Deploy artefacts
+deploy/tmp/
+
+# Playwright
+test-results/
+tests/screenshots/
+playwright-report/
+
+# Node
+node_modules/
+
+# WordPress uploads (managed by WP, not git)
+wp-content/uploads/
+
+# WordPress core — track themes/plugins only, not core files
+wp-admin/
+wp-includes/
+wp-*.php
+index.php
+license.txt
+readme.html
+xmlrpc.php
+
+# WordPress plugins — managed via WP admin / Composer, not git
+wp-content/plugins/
+
+# WordPress translation files — not custom code
+wp-content/languages/
+
+# Non-custom themes — only track kadence-child
+wp-content/themes/flatsome/
+wp-content/themes/flatsome-child/
+wp-content/themes/flatsome-child.zip
+wp-content/themes/kadence/
+wp-content/themes/kava/
+wp-content/themes/natural_food/
+wp-content/themes/storefront/
+wp-content/themes/twentynineteen/
+wp-content/themes/twentyseventeen/
+wp-content/themes/twentysixteen/
+wp-content/themes/twentytwenty/
+wp-content/themes/twentytwentyone/
+wp-content/themes/twentytwentytwo/
+
+# WordPress config (contains DB credentials)
+wp-config.php
+wp-config-sample.php
+
+# Temporary DB dump and content export files
+*.sql
+homepage_content.txt
+homepage_content_only.txt
+homepage_live.txt
+homepage_post.txt
+
+# One-off scripts (temp working files)
+audit_live.js
+
+# Local by Flywheel dev files
+local-xdebuginfo.php
+dbtest.php
+test.php
+
+# WordPress cache
+wp-content/cache/
+wp-content/advanced-cache.php
+
+# WordPress plugin artefacts (not custom code)
+wp-content/ewww/
+wp-content/updraft/
+
+# WordPress debug log
+wp-content/debug.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AI agent tool directories (skills, configs — not project source)
+.gstack/
+.agents/
+.claude/
+.adal/
+.augment/
+.bob/
+.codebuddy/
+.commandcode/
+.continue/
+.cortex/
+.crush/
+.factory/
+.goose/
+.htaccess
+.iflow/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.vibe/
+.windsurf/
+.zencoder/

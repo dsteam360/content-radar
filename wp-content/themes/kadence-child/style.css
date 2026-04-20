@@ -1,0 +1,2660 @@
+/*
+ * Theme Name:  Kadence Child
+ * Template:    kadence
+ * Description: Child theme for Toke Haus
+ * Version:     1.5.0
+ * License:     GNU General Public License v3.0
+ */
+
+/* ==========================================================================
+   Google Fonts — Fraunces (display headings) + DM Sans (body)
+   Fraunces: optical-size variable font with beautiful weight contrast
+   DM Sans:  geometric humanist — clean, readable, modern
+   ========================================================================== */
+
+
+/* ==========================================================================
+   Global Typography
+   ========================================================================== */
+
+/* Body — DM Sans throughout */
+body,
+.entry-content,
+input,
+button,
+select,
+textarea {
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Display headings — Fraunces for editorial character */
+.hh-hero-left h1,
+.hh-rewards h2,
+.hh-shipping-left h2,
+.hh-reviews-header-left h2,
+.hh-email-left h2 {
+  font-family: 'Fraunces', Georgia, serif !important;
+}
+
+/* Section eyebrows — DM Sans uppercase (no change in face, just explicit) */
+.hh-eyebrow,
+.hh-section-eyebrow,
+.hh-feature-eyebrow,
+.hh-deals-title,
+.hh-footer-col-title {
+  font-family: 'DM Sans', system-ui, sans-serif !important;
+}
+
+/* ==========================================================================
+   SVG Icon Display Fixes
+   Emoji replacements are now inline SVGs — ensure containers size correctly
+   and icons inherit the right color in each context
+   ========================================================================== */
+
+/* Effect tiles — lime-green accent, vertically centred */
+.hh-effect-icon {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 0 !important;        /* kill any residual font-size spacing */
+  color: #A8F080 !important;      /* lime green */
+  line-height: 0 !important;
+}
+.hh-effect-icon svg {
+  flex-shrink: 0;
+}
+
+/* Trust bar — dark-green icons inside the mint circle */
+.hh-trust-icon {
+  color: #2D6A2D !important;
+}
+.hh-trust-icon svg {
+  display: block;
+}
+
+/* Rewards — dark-green icons */
+.hh-reward-icon {
+  display: block !important;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: #2D6A2D !important;
+  margin-bottom: 12px !important;
+}
+.hh-reward-icon svg {
+  display: block;
+}
+
+/* Referral banner — dark-green */
+.hh-referral-icon {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: #2D6A2D !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Shipping section — white icons on green bg */
+.hh-shipping-card-icon {
+  font-size: 0 !important;
+  line-height: 0 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  margin-top: 2px;
+}
+.hh-shipping-card-icon svg {
+  display: block;
+}
+
+/* Footer social icons — muted white, green on hover */
+.hh-footer-social {
+  color: rgba(255, 255, 255, 0.45) !important;
+  font-size: 0 !important;        /* hide any fallback text */
+  line-height: 0 !important;
+}
+.hh-footer-social:hover {
+  color: #A8F080 !important;
+  border-color: rgba(168, 240, 128, 0.4) !important;
+}
+.hh-footer-social svg {
+  display: block;
+}
+
+/* ==========================================================================
+   Hero CTA Buttons
+   Using .hh-hero-ctas parent for higher specificity than the inline
+   body <style> block, which defines these at single-class specificity.
+   ========================================================================== */
+
+/* Primary — solid lime-green fill */
+.hh-hero-ctas .hh-btn-primary {
+  background: #a8f080 !important;
+  color: #1a2e1a !important;
+  border: none;
+}
+
+.hh-hero-ctas .hh-btn-primary:hover {
+  background: #8fd668 !important;
+  color: #1a2e1a !important;
+  box-shadow: 0 4px 16px rgba(168, 240, 128, 0.35) !important;
+  transform: translateY(-1px);
+}
+
+/* Secondary — white outline, unchanged */
+
+.hh-hero-ctas .hh-btn-secondary {
+  background: transparent !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+}
+
+.hh-hero-ctas .hh-btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   Stats bar — standalone full-width section below hero, above deals
+   ========================================================================== */
+
+/* Give the hero wrapper the same gradient so its full min-height is covered */
+.hh-hero {
+  background: linear-gradient(135deg, #2d6a2d 0%, #1a4a1a 100%) !important;
+}
+
+/* ── Kadence block hero overrides ────────────────────────────────────────────
+   Kadence's kt-row-column-wrap defaults to display:grid with a restricted
+   max-width. Override so the hero gets the full-bleed 55/45 flex split.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-hero .kt-row-column-wrap {
+  display: flex !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 480px !important;
+  flex: 1 1 100% !important;
+  padding: 0 !important;
+}
+.hh-hero .hh-hero-left {
+  flex: 0 0 55% !important;
+  width: 55% !important;
+  max-width: 55% !important;
+}
+.hh-hero .hh-hero-feature {
+  flex: 1 1 auto !important;
+  width: 45% !important;
+  max-width: 45% !important;
+}
+/* Kadence adds kb-row-layout-wrap as a wrapper — absorb into hero styling */
+.kb-row-layout-wrap.hh-hero {
+  display: flex !important;
+  flex-direction: column !important;
+  margin-bottom: 0 !important;   /* kill the default Kadence block gap */
+}
+/* Prevent any top margin on the category strip that follows */
+.th-cat-strip {
+  margin-top: 0 !important;
+}
+.kb-row-layout-wrap.hh-hero > .kt-row-column-wrap {
+  flex: 1 1 auto !important;
+}
+
+/* ── Kadence stats bar overrides ─────────────────────────────────────────────
+   3-column rowlayout; kt-row-column-wrap is forced to 100% width so stats
+   span edge-to-edge inside the full-bleed dark background strip.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-trust-stats .kt-row-column-wrap {
+  display: flex !important;          /* override Kadence's default grid */
+  flex-direction: row !important;
+  width: 100% !important;
+  max-width: 1100px !important;
+  padding: 0 !important;
+  align-items: center !important;   /* vertically centre columns within the row */
+}
+.hh-trust-stats .wp-block-kadence-column {
+  display: flex !important;
+  flex: 1 1 0 !important;           /* equal thirds */
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+}
+.hh-trust-stats .kt-inside-inner-col {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;  /* centre number + label stack vertically */
+  text-align: center !important;
+}
+
+.hh-trust-stats {
+  width: 100vw !important;
+  position: relative !important;
+  left: 50% !important;
+  margin-left: -50vw !important;
+  margin-top: -24px !important;
+  background: #234d23 !important;
+  /* padding-top compensates for the -24px hero overlap so visual space above
+     and below the stats is equal: 28 + 24 = 52px top vs 28px bottom → use
+     36px top (feels 12px after overlap) and 36px bottom for true symmetry.   */
+  padding: 36px 40px !important;
+  border-top: none !important;
+  /* Centre the kt-row-column-wrap child both axes inside this flex column */
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 0 !important;
+}
+
+/* ── Kadence trust bar overrides ─────────────────────────────────────────────
+   5-column rowlayout full-bleed. Each hh-trust-item column needs to display
+   as a horizontal flex row (icon left, text right) matching the original.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-trust-bar.kb-row-layout-wrap {
+  margin-top: 0 !important;
+}
+.hh-trust-bar .kt-row-column-wrap {
+  display: flex !important;          /* override Kadence's default grid */
+  flex-direction: row !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+.hh-trust-bar .wp-block-kadence-column.hh-trust-item {
+  flex: 1 1 0 !important;           /* equal fifths */
+  padding: 0 !important;
+}
+.hh-trust-bar .hh-trust-item .kt-inside-inner-col {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 20px 24px !important;
+  border-right: 1px solid #E4EBE0 !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+.hh-trust-bar .hh-trust-item:last-child .kt-inside-inner-col {
+  border-right: none !important;
+}
+
+/* ==========================================================================
+   Deals panel — Premium 2-column card grid
+   Design system: E-commerce Luxury palette + Minimal/Swiss style
+   Via UI/UX Pro Max: cursor-pointer, hover lift, image zoom, contrast ≥4.5:1
+   ========================================================================== */
+
+/* Grid wrapper — constrained & centered */
+.hh-hero-right {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 20px !important;
+  align-items: start !important;
+  width: 100% !important;
+  max-width: 780px !important;
+  margin: 32px auto 0 !important;
+  padding: 0 !important;
+  position: static !important;
+  left: auto !important;
+  overflow-y: visible !important;
+  max-height: none !important;
+  flex: none !important;
+}
+
+/* Section header row */
+.hh-deals-header {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding-bottom: 16px !important;
+  border-bottom: 1px solid #f3f4f6 !important;
+  margin-bottom: 4px !important;
+}
+
+.hh-deals-title {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: #374151 !important;
+  flex: 1 !important;
+}
+
+.hh-live-badge {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  font-size: 8px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+  padding: 3px 8px !important;
+  border-radius: 3px !important;
+}
+
+.hh-view-all {
+  font-size: 11px !important;
+  color: #9ca3af !important;
+  font-weight: 500 !important;
+  text-decoration: none !important;
+  letter-spacing: 0.04em !important;
+  transition: color 0.15s ease !important;
+}
+
+.hh-view-all:hover {
+  color: #2D6A2D !important;
+}
+
+/* Card shell — white, shadow, hover lift */
+.hh-deal-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  margin-bottom: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04) !important;
+  cursor: pointer !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.hh-deal-card:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.09), 0 2px 8px rgba(0,0,0,0.05) !important;
+}
+
+/* Thumbnail — 4:3 ratio, image zooms on card hover */
+.hh-deal-thumb {
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 4 / 3 !important;
+  border-radius: 10px 10px 0 0 !important;
+  overflow: hidden !important;
+  display: block !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.hh-deal-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 0 !important;
+  transition: transform 0.35s ease !important;
+}
+
+.hh-deal-card:hover .hh-deal-thumb img {
+  transform: scale(1.05) !important;
+}
+
+/* Info area */
+.hh-deal-info {
+  padding: 12px 14px 14px !important;
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 3px !important;
+}
+
+/* Strain — uppercase eyebrow label */
+.hh-deal-strain {
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.10em !important;
+  text-transform: uppercase !important;
+  color: #9ca3af !important;
+  margin-bottom: 1px !important;
+}
+
+/* Product name */
+.hh-deal-name {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #111827 !important;
+  line-height: 1.35 !important;
+  margin-bottom: 8px !important;
+}
+
+/* Price — larger, dark (not green — cleaner, higher contrast) */
+.hh-deal-price {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+}
+
+.hh-deal-old {
+  font-size: 11px !important;
+  color: #d1d5db !important;
+  text-decoration: line-through !important;
+}
+
+/* Discount badge — soft green pill instead of hard red */
+.hh-save-badge {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+  border: 1px solid #bbf7d0 !important;
+}
+
+/* Grade badge — dark glass pill in image corner */
+.hh-grade-badge {
+  position: absolute !important;
+  top: 10px !important;
+  right: 10px !important;
+  margin-left: 0 !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  padding: 3px 8px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.hh-grade-aaaa {
+  background: rgba(0,0,0,0.52) !important;
+  color: #fbbf24 !important;
+  border: none !important;
+}
+
+.hh-grade-aaa {
+  background: rgba(0,0,0,0.52) !important;
+  color: #e5e7eb !important;
+  border: none !important;
+}
+
+/* ==========================================================================
+   Priority #3 — Announcement bar: black background instead of green
+   Black reads as a premium utility strip; saves the brand green for the hero
+   ========================================================================== */
+.hh-announce {
+  background: #111 !important;
+}
+
+/* ==========================================================================
+   Priority #5 — Shipping section: near-black background
+   Breaks the green→white→green→white monotony, adds drama
+   ========================================================================== */
+/* ── Kadence shipping overrides ──────────────────────────────────────────────
+   2-column rowlayout (text left / cards right). kt-row-column-wrap gets a
+   max-width so the content centres inside the full-bleed dark section.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-shipping.kb-row-layout-wrap {
+  background: #0F1F0F !important;
+}
+.hh-shipping .kt-row-column-wrap {
+  display: flex !important;          /* Fix: Kadence defaults to grid — force side-by-side */
+  flex-direction: row !important;
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  padding: 0 !important;
+  gap: 64px !important;
+  align-items: center !important;
+}
+.hh-shipping .hh-shipping-left.wp-block-kadence-column {
+  padding: 0 !important;
+}
+.hh-shipping .hh-shipping-left .kt-inside-inner-col {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+/* Target headings and paragraphs inside Kadence column */
+.hh-shipping .hh-shipping-left .wp-block-heading {
+  color: #ffffff !important;
+}
+.hh-shipping .hh-shipping-left .wp-block-heading em {
+  color: #A8F080 !important;
+  font-style: normal !important;
+}
+.hh-shipping .hh-shipping-left .wp-block-paragraph {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+.hh-shipping {
+  background: #0F1F0F !important;
+}
+
+/* The shipping cards already use rgba(255,255,255,0.08) bg + white text
+   so they read fine on #0F1F0F. Just tighten the border slightly for depth. */
+.hh-shipping-card {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+}
+
+/* ==========================================================================
+   Priority #8 — Rewards section: dark background for contrast & exclusivity
+   Premium loyalty/rewards sections use dark tones to convey value
+   ========================================================================== */
+/* ── Kadence rewards overrides ───────────────────────────────────────────────
+   Single-column rowlayout. The column uses class hh-rewards-inner so the
+   existing max-width/margin CSS constrains content inside the full-bleed bg.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-rewards.kb-row-layout-wrap {
+  background: #0F1F0F !important;
+}
+.hh-rewards .kt-row-column-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+/* hh-rewards-inner on the column restores the max-width inner container */
+.hh-rewards .hh-rewards-inner.wp-block-kadence-column {
+  padding: 0 !important;
+}
+.hh-rewards .hh-rewards-inner .kt-inside-inner-col {
+  max-width: 900px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+/* Target the wp:heading block's h2 inside rewards (Kadence wraps in wp-block-heading) */
+.hh-rewards .hh-rewards-inner .wp-block-heading {
+  color: #ffffff !important;
+}
+.hh-rewards .hh-rewards-inner .wp-block-heading em {
+  color: #A8F080 !important;
+  font-style: normal !important;
+}
+/* Paragraph block */
+.hh-rewards .hh-rewards-inner .wp-block-paragraph.hh-rewards-sub {
+  color: rgba(255,255,255,0.65) !important;
+}
+
+.hh-rewards {
+  background: #0F1F0F !important;
+}
+
+/* Flip all reward section text for dark background.
+   SPECIFICITY NOTE: The post's inline <style> uses !important on the same
+   selectors (e.g. .hh-rewards h2). At equal specificity, the body-scoped
+   inline style wins. We beat it by nesting into the parent containers that
+   exist in the HTML (.hh-rewards-inner, .hh-rewards-grid, .hh-referral). */
+
+/* Eyebrow — no !important in inline, child theme !important wins as-is */
+.hh-rewards .hh-section-eyebrow {
+  color: #A8F080 !important;
+}
+
+/* h2 — inline has color:#1A2E1A !important (specificity 0,0,1,1)
+   Using .hh-rewards .hh-rewards-inner h2 (0,0,2,1) beats it */
+.hh-rewards .hh-rewards-inner h2 {
+  color: #ffffff !important;
+}
+.hh-rewards .hh-rewards-inner h2 em {
+  color: #A8F080 !important;
+}
+
+/* Sub-text — no !important inline, this wins cleanly */
+.hh-rewards-sub {
+  color: rgba(255, 255, 255, 0.60) !important;
+}
+
+/* Reward grid — no !important inline, child theme wins */
+.hh-rewards-grid {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+.hh-reward-cell {
+  background: transparent !important;
+}
+.hh-reward-value {
+  color: #A8F080 !important;
+}
+
+/* Cell headings/body — inline has !important at (0,0,1,1)
+   .hh-rewards-grid .hh-reward-cell h4/p (0,0,2,1) beats it */
+.hh-rewards-grid .hh-reward-cell h4 {
+  color: #ffffff !important;
+}
+.hh-rewards-grid .hh-reward-cell p {
+  color: rgba(255, 255, 255, 0.50) !important;
+}
+
+/* Reward SVG icons — lime on dark */
+.hh-reward-icon {
+  color: #A8F080 !important;
+}
+
+/* Referral strip */
+.hh-referral {
+  background: rgba(168, 240, 128, 0.08) !important;
+  border: 1px solid rgba(168, 240, 128, 0.20) !important;
+}
+
+/* Referral text — inline has !important at (0,0,1,1)
+   .hh-referral .hh-referral-text h4/p (0,0,2,1) beats it */
+.hh-referral .hh-referral-text h4 {
+  color: #ffffff !important;
+}
+.hh-referral .hh-referral-text p {
+  color: rgba(255, 255, 255, 0.55) !important;
+}
+
+/* Referral icon and button */
+.hh-referral-icon {
+  color: #A8F080 !important;
+}
+.hh-referral-btn {
+  background: #2D6A2D !important;
+  color: #ffffff !important;
+}
+.hh-referral-btn:hover {
+  background: #3A8A3A !important;
+}
+
+/* ── Kadence email CTA overrides ─────────────────────────────────────────────
+   2-column rowlayout (text+perks left / form right). Inner kt-row-column-wrap
+   gets a max-width so content centres inside the full-bleed dark section.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-email .kt-row-column-wrap {
+  display: flex !important;          /* Fix: Kadence defaults to grid — force side-by-side */
+  flex-direction: row !important;
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  padding: 0 !important;
+  gap: 64px !important;
+  align-items: center !important;
+}
+.hh-email .hh-email-left.wp-block-kadence-column,
+.hh-email .hh-email-right.wp-block-kadence-column {
+  padding: 0 !important;
+}
+/* wp:heading / wp:paragraph inside email left column */
+.hh-email .hh-email-left .wp-block-heading {
+  color: #ffffff !important;
+}
+.hh-email .hh-email-left .wp-block-heading em {
+  color: #A8F080 !important;
+  font-style: normal !important;
+}
+.hh-email .hh-email-left .wp-block-paragraph {
+  color: rgba(255,255,255,0.7) !important;
+}
+
+/* ── Email right column: stack input + button as flex column, left-aligned ──
+   The inline CSS sets width:100% on .hh-email-btn (no !important) so child
+   theme wins. Force button to auto-width, lime-green fill, dark text.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-email .hh-email-right .kt-inside-inner-col {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+}
+.hh-email .hh-email-input {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.hh-email .hh-email-btn {
+  background: #A8F080 !important;
+  color: #1A2E1A !important;
+  width: auto !important;
+  min-width: 180px !important;
+  align-self: flex-start !important;
+}
+.hh-email .hh-email-btn:hover {
+  background: #8fd668 !important;
+  color: #1A2E1A !important;
+}
+
+/* ── Footer logo: real site logo image, wide enough for wordmark to read ────
+   White-text PNG on dark #1A2E1A background. Width fixed at 140px so the
+   "TOKE HAUS" wordmark is fully legible; height auto preserves aspect ratio.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-footer-logo-img {
+  width: 140px !important;
+  height: auto !important;
+  display: block !important;
+}
+/* Hide the old letter-circle */
+.hh-footer-logo-mark {
+  display: none !important;
+}
+.hh-footer-brand-logo {
+  gap: 0 !important;
+}
+
+/* ── Fix 6: Hero dark panel bleed into stats bar top-right ──────────────────
+   The hh-hero-feature panel has a darker bg that overhangs 24px below the
+   hero due to the negative-margin overlap. Clipping the hero wrapper and
+   lifting the stats bar above it via z-index removes the artifact.
+   ────────────────────────────────────────────────────────────────────────── */
+.kb-row-layout-wrap.hh-hero {
+  overflow: hidden !important;       /* clip feature panel to hero bounds */
+}
+.hh-trust-stats {
+  position: relative !important;
+  z-index: 1 !important;            /* sit above any hero overflow */
+}
+
+/* ── Kadence reviews overrides ───────────────────────────────────────────────
+   Single-column rowlayout with hh-reviews-inner column.
+   kt-row-column-wrap → uncapped so section uses full width.
+   ────────────────────────────────────────────────────────────────────────── */
+.hh-reviews .kt-row-column-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 0 !important;
+}
+.hh-reviews .hh-reviews-inner.wp-block-kadence-column {
+  padding: 0 !important;
+}
+.hh-reviews .hh-reviews-inner .kt-inside-inner-col {
+  max-width: 1100px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+}
+
+/* ==========================================================================
+   Mobile — Full pass at 768px and below
+   ========================================================================== */
+@media (max-width: 768px) {
+
+  /* ── Stats bar ───────────────────────────────────────────────────────────
+     3 stats, equal thirds. At 375px − 24px padding = 351px ÷ 3 = 117px/item.
+  */
+  .hh-trust-stats {
+    gap: 0 !important;
+    padding: 22px 12px !important;
+    justify-content: space-evenly !important;
+  }
+  .hh-trust-stats > div {
+    flex: 1 !important;
+    text-align: center !important;
+    min-width: 0 !important;
+  }
+  .hh-stat-label {
+    font-size: 9px !important;
+    letter-spacing: 0.04em !important;
+  }
+
+  /* ── Trust bar ───────────────────────────────────────────────────────────
+     5 columns at 75px each = completely illegible text at 375px.
+     Fix: switch to a horizontally scrollable single row so all 5 items stay
+     in their original horizontal layout but the user can scroll to see them.
+     Each item gets a min-width so text has room; snap scrolling for polish.
+  */
+  .hh-trust-bar .kt-row-column-wrap {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+    flex-wrap: nowrap !important;
+    padding-bottom: 4px !important;  /* breathing room above scrollbar */
+  }
+  .hh-trust-bar .wp-block-kadence-column.hh-trust-item {
+    flex: 0 0 auto !important;       /* don't shrink — scroll instead */
+    min-width: 160px !important;     /* enough for "Canada Post Xpresspost" */
+    scroll-snap-align: start !important;
+  }
+  /* Tighten the inner padding on mobile so content sits well at 160px */
+  .hh-trust-bar .hh-trust-item .kt-inside-inner-col {
+    padding: 16px 16px !important;
+  }
+
+  /* ── Kadence hero — mobile column stacking ──────────────────────────────
+     Override Kadence's kt-row-column-wrap to stack columns vertically.    */
+
+  .hh-hero .kt-row-column-wrap {
+    flex-direction: column !important;
+    min-height: 0 !important;
+  }
+  .hh-hero .hh-hero-left {
+    flex: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .hh-hero .hh-hero-feature {
+    flex: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* ── Hero effect tiles ───────────────────────────────────────────────────
+     More padding in the panel, lock the 2×2 grid, give tiles room,
+     bump description text from 9.5px (illegible on device) to 11px.      */
+
+  .hh-hero-feature {
+    padding: 36px 24px !important;
+  }
+
+  .hh-effect-grid {
+    grid-template-columns: 1fr 1fr !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .hh-effect-tile {
+    padding: 18px 12px 16px !important;
+    gap: 10px !important;
+  }
+
+  /* Description text was 9.5px — bump to readable 11px on mobile */
+  .hh-effect-desc {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* ── Rewards section ─────────────────────────────────────────────────────
+     Problem: 2-column grid squeezes "$50 bonus" and "Monthly loyalty bonus"
+     into cramped wrapping text. Fix: switch to 1-column grid with a
+     horizontal icon-left / content-right sub-layout inside each cell.
+
+     Cell HTML structure (4 sibling elements):
+       span.hh-reward-icon  span.hh-reward-value  h4  p
+
+     We use CSS subgrid columns [icon | content] with the icon spanning
+     all 3 content rows so value + heading + body stack cleanly on the right.
+  */
+
+  .hh-rewards {
+    padding: 48px 20px !important;
+  }
+
+  /* 1-column list on mobile — cells are full width, stacked */
+  .hh-rewards-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Sub-grid inside each cell: 40px icon column | fluid content column */
+  .hh-reward-cell {
+    display: grid !important;
+    grid-template-columns: 40px 1fr !important;
+    grid-template-rows: auto auto auto !important;
+    column-gap: 16px !important;
+    row-gap: 3px !important;
+    align-items: start !important;
+    padding: 20px !important;
+  }
+
+  /* Icon spans all 3 rows so it sits beside value + heading + body */
+  .hh-reward-icon {
+    grid-column: 1 !important;
+    grid-row: 1 / 4 !important;
+    align-self: start !important;
+    margin-bottom: 0 !important;  /* override the desktop 12px bottom gap */
+    padding-top: 2px !important;
+  }
+
+  /* Value row — reduce from 28px (wraps on mobile) to 22px */
+  .hh-reward-value {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    font-size: 22px !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0 !important;
+  }
+
+  /* Heading and body — placed in column 2, rows 2 and 3
+     Uses the higher-specificity selectors already established above       */
+  .hh-rewards-grid .hh-reward-cell h4 {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    margin-top: 2px !important;
+  }
+
+  .hh-rewards-grid .hh-reward-cell p {
+    grid-column: 2 !important;
+    grid-row: 3 !important;
+    margin-top: 2px !important;
+  }
+
+  /* Referral strip — column layout, centred text (inline CSS already does
+     this but reinforce padding to match the new section rhythm)           */
+  .hh-referral {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 24px 20px !important;
+    gap: 12px !important;
+  }
+
+  .hh-referral-icon {
+    margin: 0 auto !important;
+  }
+
+  /* ── Shipping — stack heading above cards on mobile ─────────────────────
+     Desktop: heading LEFT, cards RIGHT (flex row).
+     Mobile: heading TOP, cards BOTTOM (flex column).
+  */
+  .hh-shipping .kt-row-column-wrap {
+    flex-direction: column !important;
+    gap: 32px !important;
+  }
+  .hh-shipping .hh-shipping-left.wp-block-kadence-column,
+  .hh-shipping .wp-block-kadence-column:not(.hh-shipping-left) {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+  /* ── Email CTA — stack heading above form on mobile ─────────────────────
+     Desktop: perks LEFT, form RIGHT (flex row).
+     Mobile: perks TOP, form BOTTOM (flex column).
+  */
+  .hh-email .kt-row-column-wrap {
+    flex-direction: column !important;
+    gap: 32px !important;
+  }
+  .hh-email .hh-email-left.wp-block-kadence-column,
+  .hh-email .hh-email-right.wp-block-kadence-column {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+  }
+
+}
+
+
+/* =============================================================================
+   Editorial Deals Section — [editorial_deals]
+   Option A: Hero + 4 supporting grid, mobile swipe-row with peek
+   ============================================================================= */
+
+:root {
+  --th-ed-green-dark:  #1A4A1A;
+  --th-ed-green-mid:   #2D6A2D;
+  --th-ed-lime:        #A8F080;
+  --th-ed-text:        #111827;
+  --th-ed-text-muted:  #6b7280;
+  --th-ed-border:      #e5e7eb;
+  --th-ed-bg:          #FAFAF8;
+  --th-ed-card:        #ffffff;
+  --th-ed-save-ink:    #0d2e0d;
+}
+
+.th-ed-deals {
+  width: 100vw !important;
+  position: relative !important;
+  left: 50% !important;
+  margin-left: -50vw !important;
+  background: var(--th-ed-bg) !important;
+  padding: 72px 24px !important;
+  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+  color: var(--th-ed-text) !important;
+  -webkit-font-smoothing: antialiased !important;
+}
+
+.th-ed-container {
+  max-width: 1180px !important;
+  margin: 0 auto !important;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.th-ed-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  margin-bottom: 32px !important;
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+}
+.th-ed-header-left { flex: 1 1 auto !important; min-width: 0 !important; }
+.th-ed-header-right {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+}
+.th-ed-eyebrow {
+  display: block !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: var(--th-ed-green-mid) !important;
+  margin-bottom: 8px !important;
+}
+.th-ed-title {
+  font-family: "Fraunces", Georgia, serif !important;
+  font-weight: 600 !important;
+  font-size: 40px !important;
+  line-height: 1.05 !important;
+  letter-spacing: -0.02em !important;
+  color: var(--th-ed-green-dark) !important;
+  margin: 0 !important;
+}
+.th-ed-view-all {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: var(--th-ed-green-mid) !important;
+  text-decoration: none !important;
+  padding: 10px 16px !important;
+  border: 1.5px solid var(--th-ed-green-mid) !important;
+  border-radius: 999px !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+.th-ed-view-all:hover {
+  background: var(--th-ed-green-mid) !important;
+  color: #fff !important;
+}
+
+/* ── Countdown timer ──────────────────────────────────────────────────────── */
+.th-ed-countdown {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+  gap: 4px !important;
+}
+.th-ed-countdown-label {
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  color: var(--th-ed-text-muted) !important;
+}
+.th-ed-countdown-time {
+  display: flex !important;
+  align-items: flex-end !important;
+  gap: 1px !important;
+}
+.th-ed-countdown-unit {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  min-width: 30px !important;
+}
+.th-ed-countdown-unit b {
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  color: var(--th-ed-green-dark) !important;
+  font-variant-numeric: tabular-nums !important;
+}
+.th-ed-countdown-unit em {
+  font-style: normal !important;
+  font-size: 9px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  color: var(--th-ed-text-muted) !important;
+  margin-top: 2px !important;
+}
+.th-ed-countdown-sep {
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  color: var(--th-ed-green-mid) !important;
+  line-height: 1 !important;
+  padding-bottom: 10px !important;
+  margin: 0 1px !important;
+}
+
+/* ── Layout grid ──────────────────────────────────────────────────────────── */
+.th-ed-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+  gap: 32px !important;
+  align-items: stretch !important;
+}
+.th-ed-hero-wrap { display: flex !important; }
+.th-ed-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+
+/* ── Chips ────────────────────────────────────────────────────────────────── */
+.th-ed-chips { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; margin-bottom: 14px !important; }
+.th-ed-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.4 !important;
+  font-family: "DM Sans", sans-serif !important;
+}
+.th-ed-chip-grade {
+  background: #FCF0C4 !important;
+  color: #6B5400 !important;
+  border: 1px solid #F5E1A1 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+}
+.th-ed-chip-strain {
+  background: #EBE1F7 !important;
+  color: #5A3F85 !important;
+}
+.th-ed-chip-thc {
+  background: #EEF2F6 !important;
+  color: #374151 !important;
+}
+
+/* ── Hero card ────────────────────────────────────────────────────────────── */
+.th-ed-hero {
+  display: flex !important;
+  flex-direction: column !important;
+  background: var(--th-ed-card) !important;
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06) !important;
+  width: 100% !important;
+}
+.th-ed-hero-media {
+  display: block !important;
+  aspect-ratio: 1 / 1 !important;
+  overflow: hidden !important;
+  background: #f3f4f1 !important;
+}
+.th-ed-hero-media img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  transition: transform 0.5s ease !important;
+}
+.th-ed-hero:hover .th-ed-hero-media img { transform: scale(1.03) !important; }
+
+.th-ed-hero-body {
+  padding: 28px 28px 32px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+.th-ed-hero-title {
+  font-family: "Fraunces", Georgia, serif !important;
+  font-weight: 600 !important;
+  font-size: 28px !important;
+  line-height: 1.15 !important;
+  letter-spacing: -0.01em !important;
+  margin: 0 0 10px !important;
+  color: var(--th-ed-text) !important;
+}
+.th-ed-hero-title a { color: inherit !important; text-decoration: none !important; }
+.th-ed-hero-title a:hover { color: var(--th-ed-green-mid) !important; }
+
+.th-ed-rating {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-bottom: 16px !important;
+  font-size: 13px !important;
+}
+.th-ed-stars { color: #f59e0b !important; letter-spacing: 0.05em !important; }
+.th-ed-rating-count { color: var(--th-ed-text-muted) !important; }
+
+/* ── Price block ──────────────────────────────────────────────────────────── */
+.th-ed-price {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 20px !important;
+}
+.th-ed-price-hero .th-ed-price-now { font-size: 32px !important; }
+.th-ed-price-now {
+  font-family: "DM Sans", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 20px !important;
+  color: var(--th-ed-green-dark) !important;
+  letter-spacing: -0.01em !important;
+}
+.th-ed-price-old {
+  font-size: 15px !important;
+  color: #9ca3af !important;
+  text-decoration: line-through !important;
+  text-decoration-thickness: 1.5px !important;
+}
+.th-ed-save-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 4px 10px !important;
+  background: var(--th-ed-lime) !important;
+  color: var(--th-ed-save-ink) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  border-radius: 999px !important;
+}
+
+/* ── Weight selector (hero) ───────────────────────────────────────────────── */
+.th-ed-weights {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  margin-bottom: 20px !important;
+}
+.th-ed-weight {
+  appearance: none !important;
+  border: 1.5px solid var(--th-ed-border) !important;
+  background: #fff !important;
+  color: var(--th-ed-text) !important;
+  padding: 10px 16px !important;
+  font-family: "DM Sans", sans-serif !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  min-height: 40px !important;
+}
+.th-ed-weight:hover:not(.is-oos) { border-color: var(--th-ed-green-mid) !important; }
+.th-ed-weight.is-selected {
+  background: var(--th-ed-green-dark) !important;
+  border-color: var(--th-ed-green-dark) !important;
+  color: #fff !important;
+}
+.th-ed-weight.is-oos {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+  text-decoration: line-through !important;
+}
+
+/* ── CTA button — unified size for both hero and grid cards ──────────────── */
+.th-ed-cta {
+  appearance: none !important;
+  border: none !important;
+  background: var(--th-ed-green-dark) !important;
+  color: #fff !important;
+  font-family: "DM Sans", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 13px !important;
+  letter-spacing: 0.02em !important;
+  padding: 12px 20px !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  min-height: 44px !important;
+  position: relative !important;
+  width: 100% !important;
+}
+.th-ed-cta:hover { background: #143813 !important; transform: translateY(-1px) !important; }
+.th-ed-cta.is-loading { opacity: 0.6 !important; cursor: wait !important; }
+.th-ed-cta-weight { opacity: 0.8 !important; font-weight: 500 !important; }
+
+/* ── Grid card ────────────────────────────────────────────────────────────── */
+.th-ed-card {
+  position: relative !important;
+  background: var(--th-ed-card) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05) !important;
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+.th-ed-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 24px rgba(0,0,0,0.09) !important;
+}
+.th-ed-card-media {
+  position: relative !important;
+  display: block !important;
+  aspect-ratio: 1 / 1 !important;
+  background: #f3f4f1 !important;
+  overflow: hidden !important;
+}
+.th-ed-card-media img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+.th-ed-card-grade {
+  position: absolute !important;
+  top: 10px !important;
+  left: 10px !important;
+  background: #FCF0C4 !important;
+  color: #6B5400 !important;
+  font-weight: 700 !important;
+  font-size: 10px !important;
+  letter-spacing: 0.08em !important;
+  padding: 4px 9px !important;
+  border-radius: 6px !important;
+  border: 1px solid #F5E1A1 !important;
+}
+.th-ed-card-body {
+  padding: 14px 14px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  gap: 10px !important;
+}
+.th-ed-card-chips { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
+.th-ed-card-chips .th-ed-chip { font-size: 10px !important; padding: 3px 8px !important; }
+.th-ed-card-title {
+  font-family: "DM Sans", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+  color: var(--th-ed-text) !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+.th-ed-card-title a { color: inherit !important; text-decoration: none !important; }
+.th-ed-card-title a:hover { color: var(--th-ed-green-mid) !important; }
+.th-ed-card .th-ed-price { margin: 0 !important; gap: 8px !important; }
+.th-ed-card .th-ed-price-now { font-size: 16px !important; }
+.th-ed-card .th-ed-price-old { font-size: 13px !important; }
+.th-ed-card .th-ed-save-badge { font-size: 10px !important; padding: 3px 8px !important; }
+
+.th-ed-quick-add {
+  appearance: none !important;
+  border: 1.5px solid var(--th-ed-green-dark) !important;
+  background: #fff !important;
+  color: var(--th-ed-green-dark) !important;
+  font-family: "DM Sans", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.04em !important;
+  text-transform: uppercase !important;
+  padding: 10px 12px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  margin-top: auto !important;
+  transition: all 0.15s ease !important;
+}
+.th-ed-quick-add:hover {
+  background: var(--th-ed-green-dark) !important;
+  color: #fff !important;
+}
+
+/* ── Quick-add popup ──────────────────────────────────────────────────────── */
+.th-ed-popup {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(17, 24, 39, 0.5) !important;
+  z-index: 9999 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+  animation: th-ed-fade 0.15s ease !important;
+}
+@keyframes th-ed-fade { from { opacity: 0; } to { opacity: 1; } }
+.th-ed-popup[hidden] { display: none !important; }
+.th-ed-popup-inner {
+  background: #fff !important;
+  border-radius: 16px !important;
+  padding: 24px !important;
+  width: 100% !important;
+  max-width: 360px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2) !important;
+  position: relative !important;
+}
+.th-ed-popup-close {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  width: 32px !important;
+  height: 32px !important;
+  border: none !important;
+  background: transparent !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  color: var(--th-ed-text-muted) !important;
+  cursor: pointer !important;
+  border-radius: 50% !important;
+}
+.th-ed-popup-close:hover { background: #f3f4f6 !important; }
+.th-ed-popup-title {
+  font-family: "Fraunces", Georgia, serif !important;
+  font-weight: 600 !important;
+  font-size: 18px !important;
+  color: var(--th-ed-green-dark) !important;
+  margin-bottom: 16px !important;
+  text-transform: capitalize !important;
+}
+.th-ed-popup-options {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)) !important;
+  gap: 8px !important;
+  margin-bottom: 18px !important;
+}
+.th-ed-popup-opt {
+  appearance: none !important;
+  border: 1.5px solid var(--th-ed-border) !important;
+  background: #fff !important;
+  padding: 12px 8px !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 4px !important;
+  font-family: "DM Sans", sans-serif !important;
+  transition: all 0.15s ease !important;
+}
+.th-ed-popup-opt:hover:not(.is-oos) { border-color: var(--th-ed-green-mid) !important; }
+.th-ed-popup-opt.is-selected {
+  background: var(--th-ed-green-dark) !important;
+  border-color: var(--th-ed-green-dark) !important;
+  color: #fff !important;
+}
+.th-ed-popup-opt .lbl { font-size: 12px !important; font-weight: 600 !important; }
+.th-ed-popup-opt .px  { font-size: 14px !important; font-weight: 700 !important; }
+.th-ed-popup-opt.is-oos { opacity: 0.4 !important; cursor: not-allowed !important; }
+
+.th-ed-popup-cta {
+  appearance: none !important;
+  border: none !important;
+  background: var(--th-ed-green-dark) !important;
+  color: #fff !important;
+  width: 100% !important;
+  padding: 14px !important;
+  font-family: "DM Sans", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+}
+.th-ed-popup-cta:disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
+.th-ed-popup-cta:not(:disabled):hover { background: #143813 !important; }
+
+/* ── Toast ────────────────────────────────────────────────────────────────── */
+.th-ed-toast {
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: var(--th-ed-green-dark) !important;
+  color: #fff !important;
+  padding: 14px 24px !important;
+  border-radius: 999px !important;
+  font-family: "DM Sans", sans-serif !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+  z-index: 10000 !important;
+  animation: th-ed-slide-up 0.3s ease !important;
+}
+.th-ed-toast.is-error { background: #b91c1c !important; }
+.th-ed-toast[hidden] { display: none !important; }
+@keyframes th-ed-slide-up {
+  from { transform: translate(-50%, 20px); opacity: 0; }
+  to   { transform: translate(-50%, 0); opacity: 1; }
+}
+
+/* ── Editorial copy ───────────────────────────────────────────────────────── */
+.th-ed-editorial {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: var(--th-ed-text-muted) !important;
+  font-style: italic !important;
+  margin: 0 0 14px !important;
+}
+.th-ed-card-editorial {
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+  color: var(--th-ed-text-muted) !important;
+  font-style: italic !important;
+  margin: 0 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* ── Scarcity chip ────────────────────────────────────────────────────────── */
+.th-ed-scarcity {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #b91c1c !important;
+  background: #fef2f2 !important;
+  border: 1px solid #fecaca !important;
+  border-radius: 6px !important;
+  padding: 4px 10px !important;
+  margin: 0 !important;
+}
+.th-ed-scarcity::before { content: "⚡" !important; font-size: 11px !important; }
+.th-ed-scarcity-sm {
+  font-size: 11px !important;
+  padding: 3px 8px !important;
+}
+
+/* ── Grid card ratings ────────────────────────────────────────────────────── */
+.th-ed-card-rating {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin: 0 !important;
+}
+.th-ed-card-stars {
+  color: #f59e0b !important;
+  font-size: 11px !important;
+  letter-spacing: 0.03em !important;
+  line-height: 1 !important;
+}
+.th-ed-card-rating-count {
+  font-size: 11px !important;
+  color: var(--th-ed-text-muted) !important;
+  line-height: 1 !important;
+}
+
+/* ── Compact weight pills (grid cards) ───────────────────────────────────── */
+.th-ed-weights-sm { margin-bottom: 0 !important; gap: 5px !important; margin-top: auto !important; }
+.th-ed-weights-sm .th-ed-weight {
+  padding: 7px 10px !important;
+  font-size: 11.5px !important;
+  border-radius: 8px !important;
+  min-height: 34px !important;
+}
+
+/* .th-ed-cta-card intentionally uses same base styles as .th-ed-cta */
+
+/* ── Added success state ──────────────────────────────────────────────────── */
+.th-ed-cta.is-added {
+  background: var(--th-ed-lime) !important;
+  color: var(--th-ed-green-dark) !important;
+}
+.th-ed-cta.is-added:hover { background: #96e060 !important; transform: none !important; }
+
+/* ── Mobile (≤ 900px): stack hero, swipe-row the grid with peek ───────────── */
+@media (max-width: 900px) {
+  .th-ed-deals { padding: 48px 0 !important; }
+  .th-ed-container { padding: 0 !important; }
+  .th-ed-header {
+    padding: 0 20px !important;
+    margin-bottom: 24px !important;
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+  }
+  .th-ed-header-right { align-items: flex-start !important; }
+  .th-ed-countdown { align-items: flex-start !important; }
+  .th-ed-title { font-size: 30px !important; }
+
+  .th-ed-layout {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .th-ed-hero-wrap { padding: 0 16px !important; }
+  .th-ed-hero-body { padding: 22px 22px 26px !important; }
+  .th-ed-hero-title { font-size: 24px !important; }
+  .th-ed-price-hero .th-ed-price-now { font-size: 26px !important; }
+
+  /* Swipe-row grid with 2nd-card peek */
+  .th-ed-grid {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-auto-columns: 72% !important;
+    grid-template-columns: none !important;
+    gap: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: x mandatory !important;
+    scroll-padding-left: 16px !important;
+    padding: 4px 16px 12px !important;
+    scrollbar-width: none !important;
+  }
+  .th-ed-grid::-webkit-scrollbar { display: none !important; }
+  .th-ed-card { scroll-snap-align: start !important; }
+
+  .th-ed-view-all {
+    padding: 8px 14px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* ── Small mobile (≤ 480px) — 375px target per task spec ─────────────────── */
+@media (max-width: 480px) {
+  .th-ed-title { font-size: 26px !important; }
+  .th-ed-hero-title { font-size: 22px !important; }
+  .th-ed-weights { gap: 6px !important; }
+  .th-ed-weight { padding: 9px 12px !important; font-size: 12px !important; }
+  /* Peek: 76% first card + 12px gap + ~20% of 2nd = clear swipe affordance at 375px */
+  .th-ed-grid { grid-auto-columns: 76% !important; }
+  .th-ed-card-body { padding: 12px !important; }
+  .th-ed-card-title { font-size: 13px !important; }
+}
+
+
+/* =============================================================================
+   NEW PAGE STYLES — FAQ, Reviews, About + Mobile overflow fixes
+   ============================================================================= */
+
+/* ── FAQ Accordion ─────────────────────────────────────────────────────────── */
+.th-faq-wrap {
+  max-width: 780px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.th-faq-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.15s ease;
+}
+
+.th-faq-item.is-open {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.th-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 20px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  text-align: left;
+  gap: 16px;
+}
+
+.th-faq-q:hover { background: #f9fafb; }
+
+.th-faq-q span { flex: 1; word-break: break-word; }
+
+.th-faq-icon {
+  flex-shrink: 0;
+  color: #2D6A2D;
+  transition: transform 0.25s ease;
+}
+
+.th-faq-item.is-open .th-faq-icon { transform: rotate(180deg); }
+
+.th-faq-a {
+  overflow: hidden;
+}
+
+.th-faq-a-inner {
+  padding: 0 24px 24px;
+  color: #4b5563;
+  font-size: 15px;
+  line-height: 1.7;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ── Reviews Grid ──────────────────────────────────────────────────────────── */
+.th-reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 16px;
+}
+
+.th-reviews-grid[data-cols="2"] { grid-template-columns: repeat(2, 1fr); }
+.th-reviews-grid[data-cols="1"] { grid-template-columns: 1fr; }
+
+.th-review-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.th-review-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.th-review-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.th-review-author {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+}
+
+.th-review-verified {
+  font-size: 11px;
+  color: #2D6A2D;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.th-review-date {
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+.th-review-stars {
+  font-size: 14px;
+  color: #f59e0b;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.th-review-body {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #374151;
+  flex: 1;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.th-review-product {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #f3f4f6;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2D6A2D;
+}
+
+.th-review-product img {
+  border-radius: 6px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.th-reviews-empty {
+  text-align: center;
+  color: #9ca3af;
+  padding: 60px 20px;
+}
+
+/* ── About Page ────────────────────────────────────────────────────────────── */
+.th-about-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 60px;
+}
+
+.th-about-hero-img {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+  max-height: 480px;
+  overflow: hidden;
+  margin-bottom: 60px;
+}
+
+.th-about-hero-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.th-about-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #2D6A2D;
+  margin-bottom: 12px;
+}
+
+.th-about-tagline {
+  font-size: 36px !important;
+  font-weight: 800 !important;
+  color: #111827 !important;
+  line-height: 1.2 !important;
+  margin: 0 0 24px !important;
+  word-break: break-word;
+}
+
+.th-about-mission {
+  font-size: 17px;
+  line-height: 1.75;
+  color: #374151;
+  max-width: 680px;
+  margin-bottom: 48px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.th-about-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding: 40px;
+  background: linear-gradient(135deg, #2D6A2D 0%, #1A4A1A 100%);
+  border-radius: 16px;
+  color: #fff;
+}
+
+.th-about-stat { text-align: center; }
+
+.th-about-stat-num {
+  display: block;
+  font-size: 32px;
+  font-weight: 800;
+  color: #A8F080;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.th-about-stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.8;
+  letter-spacing: 0.04em;
+}
+
+.th-about-section-heading {
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  color: #111827 !important;
+  margin: 48px 0 16px !important;
+}
+
+/* ── Mobile overflow fixes (hero + general text) ───────────────────────────── */
+.hh-hero-left h1,
+.hh-hero-sub,
+.th-ed-hero-title,
+.th-ed-card-title {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Prevent the hero section from overflowing at narrow widths */
+.hh-hero-left {
+  min-width: 0;
+}
+
+/* Nav items — prevent long words from breaking the mobile menu */
+.menu-item a {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* ── Responsive: Reviews ───────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .th-reviews-grid { grid-template-columns: repeat(2, 1fr); }
+  .th-about-stats { grid-template-columns: repeat(2, 1fr); }
+  .th-about-tagline { font-size: 28px !important; }
+}
+
+@media (max-width: 600px) {
+  .th-reviews-grid { grid-template-columns: 1fr; }
+  .th-about-stats { grid-template-columns: repeat(2, 1fr); gap: 16px; padding: 28px 20px; }
+  .th-about-stat-num { font-size: 26px; }
+  .th-faq-q { padding: 16px 18px; font-size: 15px; }
+  .th-faq-a-inner { padding: 0 18px 18px; }
+  .th-about-tagline { font-size: 24px !important; }
+}
+
+
+/* =============================================================================
+   CATEGORY QUICK-NAV STRIP
+   ============================================================================= */
+.th-cat-strip {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 0;
+}
+
+.th-cat-strip-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 0;
+}
+
+.th-cat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 22px 32px;
+  text-decoration: none;
+  color: #1A4A1A;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+  flex: 1;
+}
+
+.th-cat-tile:hover {
+  background: #f0faf0;
+  border-bottom-color: #2D6A2D;
+  color: #1A4A1A;
+  text-decoration: none;
+}
+
+.th-cat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.th-cat-icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.th-cat-label {
+  white-space: nowrap;
+}
+
+/* Mobile: horizontal swipe row */
+@media (max-width: 768px) {
+  .th-cat-strip-inner {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    justify-content: start;
+    gap: 0;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 0 12px;
+  }
+  .th-cat-strip-inner::-webkit-scrollbar { display: none; }
+  .th-cat-tile {
+    scroll-snap-align: start;
+    padding: 18px 20px;
+    flex: unset;
+  }
+  .th-cat-label { font-size: 11px; }
+}
+
+/* =============================================================================
+   SCROLL HEADER — solid background on scroll
+   ============================================================================= */
+.site-header {
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.site-header.is-scrolled {
+  background: #1A4A1A !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25) !important;
+}
+
+
+/* =============================================================================
+   HEADER PROFESSIONALIZATION
+   ============================================================================= */
+
+/* ── Sticky header (all viewports) ─────────────────────────────────────────── */
+#masthead {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 999 !important;
+  transition: background 0.3s ease, box-shadow 0.3s ease, backdrop-filter 0.3s ease !important;
+}
+
+/* ── All pages: always dark solid header ────────────────────────────────────── */
+#masthead {
+  background-color: #1A4A1A !important;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3) !important;
+}
+
+
+/* ── All white text/icons in dark header (all pages) ───────────────────────── */
+#masthead .main-navigation a,
+#masthead .main-navigation .current-menu-item > a,
+#masthead .main-navigation .menu-item > a,
+#masthead .site-branding a,
+#masthead .header-cart-button,
+#masthead .header-cart-button svg,
+#masthead .th-header-account,
+#masthead .th-header-account svg,
+#masthead .th-search-toggle,
+#masthead .th-search-toggle svg {
+  color: #ffffff !important;
+  fill: none !important;
+}
+
+/* ── Shop link — solid lime pill (primary CTA) ──────────────────────────────── */
+#primary-menu .menu-item > a[href$="/shop/"],
+#primary-menu #menu-item-11209 > a {
+  font-weight: 700 !important;
+  background: #A8F080 !important;
+  border-radius: 6px !important;
+  padding: 7px 16px !important;
+  color: #1A2E1A !important;
+  display: inline-block !important;
+  line-height: 1.3 !important;
+}
+#primary-menu .menu-item > a[href$="/shop/"]:hover,
+#primary-menu #menu-item-11209 > a:hover {
+  background: #8ee060 !important;
+  color: #1A2E1A !important;
+}
+
+/* ── Weekly Deals — ghost pill (secondary) ───────────────────────────────────── */
+#primary-menu #menu-item-11210 {
+  margin-left: 14px !important;
+}
+#primary-menu #menu-item-11210 > a {
+  font-weight: 600 !important;
+  background: transparent !important;
+  border: 1.5px solid rgba(255,255,255,0.75) !important;
+  border-radius: 6px !important;
+  padding: 6px 16px !important;
+  color: #ffffff !important;
+  display: inline-block !important;
+  line-height: 1.3 !important;
+}
+#primary-menu #menu-item-11210 > a:hover {
+  background: rgba(255,255,255,0.12) !important;
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+/* ── Header search bar ─────────────────────────────────────────────────────── */
+.th-nav-search {
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.th-header-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.th-search-toggle {
+  display: none; /* hidden on desktop, shown on mobile */
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: inherit;
+  align-items: center;
+  justify-content: center;
+}
+
+.th-search-form {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 24px;
+  overflow: hidden;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+  min-width: 200px;
+}
+
+
+.th-search-form:focus-within {
+  background: rgba(255,255,255,0.2) !important;
+  border-color: rgba(168,240,128,0.6) !important;
+  box-shadow: 0 0 0 3px rgba(168,240,128,0.15) !important;
+}
+
+.th-search-form input[type="search"] {
+  flex: 1;
+  background: none !important;
+  border: none !important;
+  outline: none !important;
+  padding: 8px 14px !important;
+  font-size: 13px !important;
+  color: #fff !important;
+  min-width: 0;
+  width: 100%;
+  box-shadow: none !important;
+}
+
+.th-search-form input[type="search"]::placeholder {
+  color: rgba(255,255,255,0.55) !important;
+  font-size: 13px;
+}
+
+.th-search-form button[type="submit"] {
+  background: none !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  cursor: pointer;
+  color: rgba(255,255,255,0.7);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.th-search-form button[type="submit"]:hover { color: #A8F080; }
+
+/* ── My Account nav item ───────────────────────────────────────────────────── */
+.th-nav-account {
+  display: flex !important;
+  align-items: center !important;
+}
+
+.th-header-account {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  text-decoration: none !important;
+  color: inherit !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+  padding: 6px 4px !important;
+  border-bottom: none !important;
+}
+
+.th-header-account svg {
+  flex-shrink: 0;
+}
+
+.th-header-account span {
+  font-size: 13px;
+}
+
+.th-header-account:hover {
+  color: #A8F080 !important;
+  text-decoration: none !important;
+}
+
+/* ── Hide default Kadence footer ───────────────────────────────────────────── */
+#colophon.site-footer {
+  display: none !important;
+}
+
+/* ── Mobile header adjustments ─────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* Show search as toggle icon, hide the form */
+  .th-search-toggle { display: flex; }
+  .th-search-form { display: none; }
+
+  /* When toggled open, show search bar below the header */
+  .th-header-search.th-search-open .th-search-form {
+    display: flex;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    z-index: 998;
+    min-width: unset;
+    border-radius: 0;
+    background: #1A4A1A;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    padding: 0 16px;
+  }
+
+  .th-header-account span { display: none; } /* icon only on mobile */
+}
+
+@media (max-width: 768px) {
+  /* Ensure header stays sticky and solid on mobile */
+  #masthead {
+    background-color: #1A4A1A !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+  }
+}
+
+/* ── Dropdown menus — readable on dark header (all pages) ───────────────────── */
+#masthead .sub-menu {
+  background: #1A4A1A !important;
+}
+#masthead .sub-menu a {
+  color: #e5e7eb !important;
+}
+#masthead .sub-menu a:hover {
+  color: #A8F080 !important;
+}
+
+/* ── FIX 1: Header alignment — full-width, properly centered ────────────────── */
+#masthead .site-header-row-container-inner {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+#masthead .site-container {
+  width: 100% !important;
+  max-width: 1440px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  box-sizing: border-box !important;
+}
+#masthead .site-main-header-inner-wrap {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ── FIX 2: Remove white/grey gap bar between announcement bar & header ─────── */
+.site-header-wrap .site-header-upper-wrap,
+.site-header-wrap .site-header-upper-inner-wrap {
+  min-height: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  line-height: 0 !important;
+}
+/* If Kadence renders an empty secondary header row, collapse it */
+.site-header-upper-inner-wrap > *:empty {
+  display: none !important;
+}
+
+/* ── FIX 3: Force solid dark green on ALL inner header containers ────────────── */
+#masthead .site-header-row-container-inner,
+#masthead .site-main-header-wrap,
+#masthead .site-header-upper-wrap,
+#masthead .site-header-inner-wrap,
+#masthead .site-header-wrap,
+#masthead .site-header-upper-inner-wrap,
+#masthead .site-header-upper-inner-wrap > div {
+  background-color: #1A4A1A !important;
+  background: #1A4A1A !important;
+}
+
+/* ── FIX 4: Logo — always white on dark header ──────────────────────────────── */
+/* The logo is a dark PNG; invert it so it reads clearly on the dark green header */
+#masthead .site-branding a.brand img,
+#masthead .site-branding img {
+  filter: brightness(0) invert(1) !important;
+  max-width: 120px !important;
+}
+
+/* =============================================================================
+   SITEWIDE FOOTER (non-homepage pages via PHP wp_footer hook)
+   ============================================================================= */
+/* .hh-footer--global inherits all existing .hh-footer styles */
+.hh-footer--global {
+  margin-top: 0;
+}
+
+
+/* =============================================================================
+   SITEWIDE FOOTER — Trust Map layout (mirrors post-4212 inline style)
+   These rules make .hh-footer work on cart, checkout, my-account, etc.
+   ============================================================================= */
+
+.hh-footer {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  margin-left: -50vw;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 60px 0 0;
+  font-size: 14px;
+}
+
+.hh-footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+
+.hh-footer-logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #A8F080;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.hh-footer-tagline {
+  font-size: 13px;
+  color: #9ca3af;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.hh-footer-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.hh-footer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(168,240,128,0.1);
+  border: 1px solid rgba(168,240,128,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #A8F080;
+  letter-spacing: 0.03em;
+}
+
+.hh-footer-col-title {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+  color: #6b7280 !important;
+  margin-bottom: 16px !important;
+  margin-top: 0 !important;
+}
+
+.hh-footer-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hh-footer-col ul li a {
+  color: #d1d5db;
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.15s;
+}
+
+.hh-footer-col ul li a:hover { color: #A8F080; }
+
+.hh-footer-bottom {
+  margin-top: 48px;
+  border-top: 1px solid #1f2937;
+  padding: 20px 24px;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.hh-footer-copy {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.hh-footer-legal {
+  display: flex;
+  gap: 16px;
+}
+
+.hh-footer-legal a {
+  font-size: 12px;
+  color: #6b7280;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.hh-footer-legal a:hover { color: #A8F080; }
+
+.hh-footer-social {
+  display: flex !important;
+  gap: 12px !important;
+  align-items: center !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  line-height: inherit !important;
+}
+
+.hh-footer-social a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  color: #9ca3af;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.hh-footer-social a:hover {
+  background: rgba(168,240,128,0.15) !important;
+  color: #A8F080 !important;
+  border-color: transparent !important;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .hh-footer-inner { grid-template-columns: 1fr 1fr; gap: 32px; }
+  .hh-footer-brand { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  .hh-footer-inner { grid-template-columns: 1fr 1fr; gap: 24px; padding: 0 16px; }
+  .hh-footer-brand { grid-column: 1 / -1; }
+  .hh-footer-bottom { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .hh-footer-legal { flex-wrap: wrap; gap: 12px; }
+}
+
+
+/* =============================================================================
+   HOMEPAGE UX REFINEMENTS  (iteration-3)
+   ============================================================================= */
+
+/* ── 1. Hero top-gradient overlay — ensures white text is legible ───────────── */
+/* The hero Kadence rowlayout gets a top-to-transparent gradient via ::before   */
+.kb-row-layout-idhero01kb {
+  position: relative;
+}
+
+.kb-row-layout-idhero01kb::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.40) 0%, rgba(0,0,0,0) 55%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure hero content sits above the gradient overlay */
+.kb-row-layout-idhero01kb > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── 2. Hero → category strip seam ─────────────────────────────────────────── */
+/* Subtle bottom border on the hero rowlayout to create a professional edge      */
+.kb-row-layout-idhero01kb {
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+
+/* =============================================================================
+   PROFIT & POLISH SPRINT — iteration-4
+   ============================================================================= */
+
+/* ── BUG-02: Announcement bar — sticky above header ─────────────────────────── */
+.hh-announce {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1001 !important;
+  /* Override the post-content full-bleed hack (left:50%; margin-left:-50vw)
+     which breaks sticky positioning — just anchor to the left edge */
+  left: 0 !important;
+  margin-left: 0 !important;
+  width: 100vw !important;
+}
+
+/* Push masthead below the announcement bar via JS (see wp_footer script) */
+/* Fallback static offset if JS hasn't fired yet */
+#masthead {
+  top: var(--announce-h, 0px) !important;
+}
+
+/* ── BUG-03: Mobile header — always solid #1A4A1A at all scroll positions ────── */
+@media (max-width: 1024px) {
+  #masthead,
+  .site-header,
+  #masthead .site-header-wrap,
+  #masthead .site-header-inner-wrap {
+    background-color: #1A4A1A !important;
+    background: #1A4A1A !important;
+  }
+  /* Mobile navigation drawer inherits the dark color */
+  .mobile-navigation,
+  .drawer-navigation {
+    background: #1A4A1A !important;
+  }
+}
+
+/* ── BUG-04: Checkout focus mode ─────────────────────────────────────────────── */
+/* Hide primary nav, search, and account links on cart/checkout */
+.th-checkout-mode #site-navigation .primary-menu-container,
+.th-checkout-mode .th-nav-search,
+.th-checkout-mode .th-nav-account {
+  display: none !important;
+}
+
+/* Hide the mobile hamburger too — no nav needed */
+.th-checkout-mode .mobile-toggle-open {
+  display: none !important;
+}
+
+/* Logo takes full left; secure badge sits right */
+.th-checkout-mode .site-header-main-section-right {
+  justify-content: flex-end !important;
+}
+
+/* Secure Checkout badge styling */
+.th-secure-badge {
+  pointer-events: none;
+}
+
+.th-secure-text {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #A8F080 !important;
+  letter-spacing: 0.02em !important;
+  padding: 0 8px !important;
+  white-space: nowrap !important;
+}
+
+.th-secure-text svg {
+  flex-shrink: 0;
+  color: #A8F080;
+}
+
+/* ── UX-01: Hide Kadence native search icon (replaced by inline bar) ─────────── */
+.site-header-focus-item[data-section="kadence_customizer_header_search"] {
+  display: none !important;
+}
+
+/* ── CONV-02: WooCommerce star ratings on product cards ─────────────────────── */
+.woocommerce ul.products li.product .star-rating,
+.woocommerce-page ul.products li.product .star-rating {
+  display: block !important;
+  margin: 4px 0 6px !important;
+  font-size: 13px !important;
+  color: #f59e0b !important;
+}
+
+.woocommerce ul.products li.product .woocommerce-product-rating {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 4px 0 8px !important;
+}
+
+.woocommerce ul.products li.product .star-rating::before,
+.woocommerce ul.products li.product .star-rating span::before {
+  color: #f59e0b !important;
+}
+
+.woocommerce ul.products li.product .woocommerce-review-link {
+  font-size: 11px !important;
+  color: #6b7280 !important;
+}
+
+/* Products with no rating — hide the empty star row */
+.woocommerce ul.products li.product .star-rating[data-rating="0"],
+.woocommerce ul.products li.product:not(.has-rating) .star-rating {
+  display: none !important;
+}
+
+/* =============================================================================
+   BUGFIX SPRINT — iteration-5
+   ============================================================================= */
+
+/* ── BUG-05: White gap bar below header on homepage ─────────────────────────── */
+/* Kadence adds 32px padding-top to .entry-content-wrap; zero it on the homepage */
+body.home .entry-content-wrap {
+  padding-top: 0 !important;
+}
+
+/* ── BUG-06: Cart count bubble ───────────────────────────────────────────────── */
+/* (Nav pill spacing now set at source in HEADER PROFESSIONALIZATION section)     */
+/* Cart count bubble — larger, lime pill */
+.header-cart-total {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 22px !important;
+  height: 22px !important;
+  padding: 0 6px !important;
+  background: #A8F080 !important;
+  color: #1A2E1A !important;
+  border-radius: 11px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  margin-left: 5px !important;
+  vertical-align: middle !important;
+}
+
+/* ── BUG-07: Announcement bar text — white on dark background (all pages) ──── */
+/* On homepage the bar has its own inline text-color; on subpages it inherits   */
+/* a dark body color against the #111 background — override to white.           */
+.hh-announce {
+  color: #ffffff !important;
+}
+.hh-announce span,
+.hh-announce a,
+.hh-announce p {
+  color: #ffffff !important;
+}
+/* Preserve the lime-green accent spans */
+.hh-announce .accent {
+  color: #A8F080 !important;
+}
