@@ -208,6 +208,17 @@ export default function Home() {
     | "Breakout Rate"
     | "Views/Hour"
     | "Recent Views";
+  type SavedViewName =
+    | "Default Radar"
+    | "Breakout Scan"
+    | "Engagement Scan"
+    | "Early Movers";
+  type SavedViewPreset = {
+    name: SavedViewName;
+    videoFilter: VideoFilter;
+    scenarioMode: ScenarioMode;
+    leaderboardSortMode: LeaderboardSortMode;
+  };
 
   const [creatorName, setCreatorName] = useState("");
   const [platform, setPlatform] = useState("");
@@ -548,11 +559,54 @@ export default function Home() {
     "Views/Hour",
     "Recent Views",
   ];
+  const savedViewPresets: SavedViewPreset[] = [
+    {
+      name: "Default Radar",
+      videoFilter: "All",
+      scenarioMode: "Balanced",
+      leaderboardSortMode: "Avg Breakout",
+    },
+    {
+      name: "Breakout Scan",
+      videoFilter: "Top Breakouts",
+      scenarioMode: "Breakout Hunt",
+      leaderboardSortMode: "Avg Breakout",
+    },
+    {
+      name: "Engagement Scan",
+      videoFilter: "High Engagement",
+      scenarioMode: "Engagement Hunt",
+      leaderboardSortMode: "Breakout Rate",
+    },
+    {
+      name: "Early Movers",
+      videoFilter: "All",
+      scenarioMode: "Emerging Watchlist",
+      leaderboardSortMode: "Views/Hour",
+    },
+  ];
+  const activeSavedView = useMemo(() => {
+    return (
+      savedViewPresets.find((preset) => {
+        return (
+          preset.videoFilter === videoFilter &&
+          preset.scenarioMode === scenarioMode &&
+          preset.leaderboardSortMode === leaderboardSortMode
+        );
+      })?.name ?? "Custom View"
+    );
+  }, [leaderboardSortMode, scenarioMode, videoFilter]);
 
   const retryYoutubeFetch = () => {
     if (!breakoutLoading && youtubeCreators.length > 0) {
       loadBreakoutPosts(youtubeCreators);
     }
+  };
+
+  const applySavedView = (preset: SavedViewPreset) => {
+    setVideoFilter(preset.videoFilter);
+    setScenarioMode(preset.scenarioMode);
+    setLeaderboardSortMode(preset.leaderboardSortMode);
   };
 
   useEffect(() => {
@@ -726,6 +780,9 @@ export default function Home() {
                 <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
                   Scenario: {scenarioMode}
                 </span>
+                <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                  View: {activeSavedView}
+                </span>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -741,6 +798,33 @@ export default function Home() {
                   }`}
                 >
                   {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Saved Views
+              </p>
+              <span className="text-xs text-zinc-500">
+                Active: {activeSavedView}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {savedViewPresets.map((preset) => (
+                <button
+                  key={preset.name}
+                  type="button"
+                  onClick={() => applySavedView(preset)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    activeSavedView === preset.name
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {preset.name}
                 </button>
               ))}
             </div>
