@@ -178,6 +178,14 @@ export type CreatorDiversificationSummary = {
   summary: string;
 };
 
+export type CreatorCoverageHealth = {
+  level: "High" | "Medium" | "Low";
+  trackedYoutubeCreators: number;
+  activeCreators: number;
+  inactiveCreators: number;
+  summary: string;
+};
+
 export type SignalShiftSummary = {
   changed: boolean;
   headline: string;
@@ -696,6 +704,67 @@ export function getCreatorDiversificationSummary(
     creatorShareLeader: leaderEntry[0],
     leaderSharePercent,
     summary: `${leaderEntry[0]} is supplying most of the visible opportunities, so the current read is fairly concentrated.`,
+  };
+}
+
+export function getCreatorCoverageHealth(
+  creators: Creator[],
+  breakoutPosts: Record<number, Video[]>
+): CreatorCoverageHealth {
+  const trackedYoutubeCreators = creators.filter((creator) => {
+    return (
+      creator.platform.toLowerCase() === "youtube" &&
+      (normalizeYoutubeHandle(creator.youtube_handle ?? "") ||
+        (creator.youtube_channel_id ?? "").trim())
+    );
+  });
+
+  if (trackedYoutubeCreators.length === 0) {
+    return {
+      level: "Low",
+      trackedYoutubeCreators: 0,
+      activeCreators: 0,
+      inactiveCreators: 0,
+      summary:
+        "No YouTube creators are tracked yet, so the dashboard has no creator coverage to analyze.",
+    };
+  }
+
+  const activeCreators = trackedYoutubeCreators.filter((creator) => {
+    return (breakoutPosts[creator.id]?.length ?? 0) > 0;
+  }).length;
+  const inactiveCreators = trackedYoutubeCreators.length - activeCreators;
+  const activeShare = activeCreators / trackedYoutubeCreators.length;
+
+  if (activeShare >= 0.75) {
+    return {
+      level: "High",
+      trackedYoutubeCreators: trackedYoutubeCreators.length,
+      activeCreators,
+      inactiveCreators,
+      summary:
+        "Most tracked YouTube creators are contributing recent videos, so coverage is strong enough for a reliable read.",
+    };
+  }
+
+  if (activeShare >= 0.4) {
+    return {
+      level: "Medium",
+      trackedYoutubeCreators: trackedYoutubeCreators.length,
+      activeCreators,
+      inactiveCreators,
+      summary:
+        "Coverage is mixed. Some tracked creators are active, but inactive creators are limiting the breadth of the dashboard.",
+    };
+  }
+
+  return {
+    level: "Low",
+    trackedYoutubeCreators: trackedYoutubeCreators.length,
+    activeCreators,
+    inactiveCreators,
+    summary:
+      "Only a small share of tracked creators are contributing recent videos, so the dashboard is running on thin coverage.",
   };
 }
 
