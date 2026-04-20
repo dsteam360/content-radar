@@ -16,6 +16,7 @@ import {
   getCreatorBenchmarkStatus,
   getCreatorMomentumDelta,
   getCreatorLeaderboardEntry,
+  getDataFreshnessSummary,
   getExecutiveSummary,
   getInsightConfidence,
   getOutlierAlerts,
@@ -36,6 +37,7 @@ import {
   type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
   type CreatorMomentumDelta,
+  type DataFreshnessSummary,
   type InsightExportPayload,
   type InsightConfidence,
   type OutlierAlert,
@@ -386,6 +388,58 @@ function CreatorCoverageHealthCard({
   );
 }
 
+type DataFreshnessCardProps = {
+  freshness: DataFreshnessSummary;
+};
+
+function DataFreshnessCard({ freshness }: DataFreshnessCardProps) {
+  const toneClasses =
+    freshness.level === "High"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : freshness.level === "Medium"
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+        : "border-zinc-700 bg-zinc-900 text-zinc-300";
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-white">Data Freshness</h3>
+          <p className="text-sm text-gray-400">
+            How current the visible dashboard signal is right now
+          </p>
+        </div>
+        <span
+          className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClasses}`}
+        >
+          {freshness.level}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Newest Age
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            {freshness.newestVideoAgeHours}h
+          </p>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Median Age
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            {freshness.medianVideoAgeHours}h
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-4 text-sm text-zinc-300">{freshness.summary}</p>
+    </div>
+  );
+}
+
 type SignalShiftCardProps = {
   shiftSummary: SignalShiftSummary;
 };
@@ -731,6 +785,7 @@ export default function Home() {
     videoFilter
   );
   const creatorCoverageHealth = getCreatorCoverageHealth(creators, breakoutPosts);
+  const dataFreshness = getDataFreshnessSummary(visibleFilteredVideos);
   const creatorDiversification = getCreatorDiversificationSummary(
     visibleFilteredVideos
   );
@@ -1594,6 +1649,8 @@ export default function Home() {
                 <CreatorCoverageHealthCard
                   coverageHealth={creatorCoverageHealth}
                 />
+
+                <DataFreshnessCard freshness={dataFreshness} />
 
                 <SignalShiftCard shiftSummary={signalShiftSummary} />
 

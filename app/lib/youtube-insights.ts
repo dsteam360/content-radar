@@ -186,6 +186,13 @@ export type CreatorCoverageHealth = {
   summary: string;
 };
 
+export type DataFreshnessSummary = {
+  level: "High" | "Medium" | "Low";
+  newestVideoAgeHours: number;
+  medianVideoAgeHours: number;
+  summary: string;
+};
+
 export type SignalShiftSummary = {
   changed: boolean;
   headline: string;
@@ -765,6 +772,54 @@ export function getCreatorCoverageHealth(
     inactiveCreators,
     summary:
       "Only a small share of tracked creators are contributing recent videos, so the dashboard is running on thin coverage.",
+  };
+}
+
+export function getDataFreshnessSummary(videos: Video[]): DataFreshnessSummary {
+  if (videos.length === 0) {
+    return {
+      level: "Low",
+      newestVideoAgeHours: 0,
+      medianVideoAgeHours: 0,
+      summary:
+        "No visible videos are available, so there is no freshness signal to evaluate yet.",
+    };
+  }
+
+  const ageHours = videos
+    .map((video) => getHoursSincePublished(video.publishedAt, video.currentTimestamp))
+    .filter((value) => Number.isFinite(value))
+    .sort((leftValue, rightValue) => leftValue - rightValue);
+
+  const newestVideoAgeHours = Math.round(ageHours[0] ?? 0);
+  const medianVideoAgeHours = Math.round(getPercentile(ageHours, 0.5));
+
+  if (newestVideoAgeHours <= 24 && medianVideoAgeHours <= 72) {
+    return {
+      level: "High",
+      newestVideoAgeHours,
+      medianVideoAgeHours,
+      summary:
+        "The visible set is very fresh, so the dashboard is reflecting current momentum closely.",
+    };
+  }
+
+  if (newestVideoAgeHours <= 72 && medianVideoAgeHours <= 168) {
+    return {
+      level: "Medium",
+      newestVideoAgeHours,
+      medianVideoAgeHours,
+      summary:
+        "The visible set is reasonably current, though some of the signal is coming from older videos.",
+    };
+  }
+
+  return {
+    level: "Low",
+    newestVideoAgeHours,
+    medianVideoAgeHours,
+    summary:
+      "The visible set is aging, so the dashboard may be reflecting stale momentum rather than the latest market shift.",
   };
 }
 
