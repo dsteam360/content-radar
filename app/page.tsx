@@ -23,6 +23,12 @@ import {
 import { supabase } from "./lib/supabase";
 
 export default function Home() {
+  type LeaderboardSortMode =
+    | "Avg Breakout"
+    | "Breakout Rate"
+    | "Views/Hour"
+    | "Recent Views";
+
   const [creatorName, setCreatorName] = useState("");
   const [platform, setPlatform] = useState("");
   const [youtubeHandle, setYoutubeHandle] = useState("");
@@ -36,6 +42,8 @@ export default function Home() {
   const [breakoutLoading, setBreakoutLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [videoFilter, setVideoFilter] = useState<VideoFilter>("All");
+  const [leaderboardSortMode, setLeaderboardSortMode] =
+    useState<LeaderboardSortMode>("Avg Breakout");
 
   async function loadCreators() {
     try {
@@ -186,6 +194,48 @@ export default function Home() {
       normalizeYoutubeHandle(creator.youtube_handle ?? "")
   );
 
+  const leaderboardSortValue = (entry: CreatorLeaderboardEntry) => {
+    if (leaderboardSortMode === "Breakout Rate") {
+      return entry.breakoutRate;
+    }
+
+    if (leaderboardSortMode === "Views/Hour") {
+      return entry.avgViewsPerHour;
+    }
+
+    if (leaderboardSortMode === "Recent Views") {
+      return entry.totalRecentViews;
+    }
+
+    return entry.averageBreakoutScore;
+  };
+
+  const sortCreatorLeaderboard = (
+    leftCreator: CreatorLeaderboardEntry,
+    rightCreator: CreatorLeaderboardEntry
+  ) => {
+    const sortValueDifference =
+      leaderboardSortValue(rightCreator) - leaderboardSortValue(leftCreator);
+
+    if (sortValueDifference !== 0) {
+      return sortValueDifference;
+    }
+
+    if (rightCreator.averageBreakoutScore !== leftCreator.averageBreakoutScore) {
+      return rightCreator.averageBreakoutScore - leftCreator.averageBreakoutScore;
+    }
+
+    if (rightCreator.breakoutRate !== leftCreator.breakoutRate) {
+      return rightCreator.breakoutRate - leftCreator.breakoutRate;
+    }
+
+    if (rightCreator.totalRecentViews !== leftCreator.totalRecentViews) {
+      return rightCreator.totalRecentViews - leftCreator.totalRecentViews;
+    }
+
+    return leftCreator.creatorName.localeCompare(rightCreator.creatorName);
+  };
+
   const creatorLeaderboard = youtubeCreators
     .map((creator) =>
       getCreatorLeaderboardEntry(
@@ -193,13 +243,7 @@ export default function Home() {
         sortVideosByPerformance(breakoutPosts[creator.id] ?? [])
       )
     )
-    .sort((leftCreator, rightCreator) => {
-      if (rightCreator.averageBreakoutScore !== leftCreator.averageBreakoutScore) {
-        return rightCreator.averageBreakoutScore - leftCreator.averageBreakoutScore;
-      }
-
-      return rightCreator.totalRecentViews - leftCreator.totalRecentViews;
-    });
+    .sort(sortCreatorLeaderboard);
 
   const visibleFilteredVideos = youtubeCreators.flatMap((creator) =>
     sortVideosByPerformance(breakoutPosts[creator.id] ?? []).filter((video) =>
@@ -225,6 +269,12 @@ export default function Home() {
     "Top Breakouts",
     "High Engagement",
     "Recent Surge",
+  ];
+  const leaderboardSortOptions: LeaderboardSortMode[] = [
+    "Avg Breakout",
+    "Breakout Rate",
+    "Views/Hour",
+    "Recent Views",
   ];
 
   return (
@@ -360,18 +410,39 @@ export default function Home() {
           {!breakoutLoading && creatorLeaderboard.length > 0 && (
             <div className="mb-6 grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-                <div className="mb-4 flex items-center justify-between gap-4">
+                <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-white">
-                      YouTube Leaderboard
-                    </h3>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-semibold text-white">
+                        YouTube Leaderboard
+                      </h3>
+                      <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                        Sorted by {leaderboardSortMode}
+                      </span>
+                    </div>
                     <p className="text-sm text-gray-400">
                       Ranked by average breakout score across recent videos
                     </p>
                   </div>
-                  <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs uppercase tracking-wide text-gray-300">
-                    {creatorLeaderboard.length} creators
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {leaderboardSortOptions.map((option) => (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setLeaderboardSortMode(option)}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                          leaderboardSortMode === option
+                            ? "bg-white text-black"
+                            : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    ))}
+                    <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs uppercase tracking-wide text-gray-300">
+                      {creatorLeaderboard.length} creators
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
