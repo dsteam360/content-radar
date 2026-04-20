@@ -15,6 +15,7 @@ import {
   getPatternSnapshot,
   getTopBreakoutScore,
   getTopSignals,
+  getWatchlistCandidates,
   getWinningPatterns,
   matchesVideoFilter,
   normalizeYoutubeHandle,
@@ -451,6 +452,10 @@ export default function Home() {
   const benchmarkSummary = getBenchmarkSummary(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
   const contentOpportunities = getContentOpportunities(
+    visibleFilteredVideos,
+    benchmarkSummary
+  );
+  const watchlistCandidates = getWatchlistCandidates(
     visibleFilteredVideos,
     benchmarkSummary
   );
@@ -1067,6 +1072,50 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
+                </div>
+
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-white">
+                      Watchlist Candidates
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      Emerging videos worth watching before they become obvious winners
+                    </p>
+                  </div>
+
+                  {watchlistCandidates.length > 0 ? (
+                    <div className="space-y-3">
+                      {watchlistCandidates.map((video) => (
+                        <div
+                          key={video.id}
+                          className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="line-clamp-2 text-sm font-semibold text-white">
+                                {video.title}
+                              </p>
+                              <p className="mt-1 text-xs text-zinc-500">
+                                {video.channelTitle || "Tracked YouTube creator"}
+                              </p>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-300">
+                              {formatCompactNumber(video.viewsPerHour)} vph
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xs text-zinc-400">
+                            {video.watchlistReason}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
+                      Not enough emerging videos stand out yet. Broaden the filter or
+                      wait for fresher uploads to surface new watchlist candidates.
+                    </div>
+                  )}
                 </div>
 
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">

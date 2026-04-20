@@ -121,6 +121,15 @@ export type CreatorComparison = {
   topVideoBreakoutScore: CreatorComparisonMetric;
 };
 
+export type WatchlistCandidate = {
+  id: string;
+  title: string;
+  channelTitle?: string;
+  breakoutScore: number;
+  viewsPerHour: number;
+  watchlistReason: string;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -690,6 +699,107 @@ export function getContentOpportunities(
   }
 
   return opportunities.slice(0, maxInsightItems);
+}
+
+export function getWatchlistCandidates(
+  videos: Video[],
+  benchmarkSummary: BenchmarkSummary
+): WatchlistCandidate[] {
+  const { smallSampleMaximumVideos } = INTELLIGENCE_THRESHOLDS.analysis;
+  const { millisecondsPerSecond, recentWindowDays } = INTELLIGENCE_THRESHOLDS.time;
+
+  if (videos.length <= smallSampleMaximumVideos) {
+    return [];
+  }
+
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+  const medianBreakoutFloor = Math.max(0, benchmarkSummary.medianBreakoutScore * 0.85);
+  const nearTopBreakoutCeiling = Math.max(
+    benchmarkSummary.highBreakoutThreshold,
+    benchmarkSummary.medianBreakoutScore + 1
+  );
+
+  const scoredCandidates = enrichedVideos
+    .map((video) => {
+      const publishedTime = new Date(video.publishedAt).getTime();
+      const ageInDays = Math.max(
+        0,
+        (Date.now() - publishedTime) /
+          (millisecondsPerSecond *
+            INTELLIGENCE_THRESHOLDS.time.secondsPerMinute *
+            INTELLIGENCE_THRESHOLDS.time.minutesPerHour *
+            INTELLIGENCE_THRESHOLDS.time.hoursPerDay)
+      );
+      const isRecent = ageInDays <= recentWindowDays;
+      const aboveMedianVelocity = video.viewsPerHour >= benchmarkSummary.medianViewsPerHour;
+      const nearMedianBreakout = video.breakoutScore >= medianBreakoutFloor;
+      const strongEngagement =
+        video.engagementRate >= benchmarkSummary.medianEngagementRate ||
+        video.commentDensity >= benchmarkSummary.medianEngagementRate * 0.4;
+      const isObviousWinner =
+        video.breakoutScore >= benchmarkSummary.highBreakoutThreshold &&
+        video.viewsPerHour >= benchmarkSummary.highVelocityThreshold;
+
+      const candidateScore =
+        (aboveMedianVelocity ? 3 : 0) +
+        (nearMedianBreakout ? 2 : 0) +
+        (strongEngagement ? 2 : 0) +
+        (isRecent ? 2 : 0) +
+        (video.engagementRate >= benchmarkSummary.highEngagementThreshold ? 1 : 0);
+
+      let watchlistReason = "Early traction is building faster than the current median.";
+
+      if (aboveMedianVelocity && strongEngagement) {
+        watchlistReason =
+          "Above-median velocity and engagement suggest this could break out next.";
+      } else if (aboveMedianVelocity && isRecent) {
+        watchlistReason =
+          "Fresh upload with fast early velocity makes this worth watching closely.";
+      } else if (strongEngagement) {
+        watchlistReason =
+          "Audience response is strong even before this has become a top breakout.";
+      } else if (nearMedianBreakout) {
+        watchlistReason =
+          "Already near the current breakout median with room to push higher.";
+      }
+
+      return {
+        id: video.id,
+        title: video.title,
+        channelTitle: video.channelTitle,
+        breakoutScore: video.breakoutScore,
+        viewsPerHour: video.viewsPerHour,
+        watchlistReason,
+        candidateScore,
+        isObviousWinner,
+        withinEmergingBand: video.breakoutScore < nearTopBreakoutCeiling,
+        qualifies: aboveMedianVelocity && (nearMedianBreakout || strongEngagement) && isRecent,
+      };
+    })
+    .filter((video) => video.qualifies && !video.isObviousWinner && video.withinEmergingBand)
+    .sort((leftVideo, rightVideo) => {
+      if (rightVideo.candidateScore !== leftVideo.candidateScore) {
+        return rightVideo.candidateScore - leftVideo.candidateScore;
+      }
+
+      if (rightVideo.viewsPerHour !== leftVideo.viewsPerHour) {
+        return rightVideo.viewsPerHour - leftVideo.viewsPerHour;
+      }
+
+      return rightVideo.breakoutScore - leftVideo.breakoutScore;
+    })
+    .slice(0, 5);
+
+  return scoredCandidates.map((video) => {
+    return {
+      id: video.id,
+      title: video.title,
+      channelTitle: video.channelTitle,
+      breakoutScore: video.breakoutScore,
+      viewsPerHour: Math.round(video.viewsPerHour),
+      watchlistReason: video.watchlistReason,
+    };
+  });
 }
 
 export function getAnalystTakeaways(
