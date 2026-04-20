@@ -6,6 +6,7 @@ import {
   formatCompactNumber,
   formatPublishedTime,
   getAnalystTakeaways,
+  getBenchmarkSummary,
   getBreakoutReason,
   getCreatorLeaderboardEntry,
   getPatternSnapshot,
@@ -362,6 +363,7 @@ export default function Home() {
     )
   );
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
+  const benchmarkSummary = getBenchmarkSummary(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
   const analystTakeaways = getAnalystTakeaways(
     visibleFilteredVideos,
@@ -713,6 +715,76 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+
+                {visibleFilteredVideos.length > 0 && (
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white">
+                        Benchmark Summary
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        Relative baselines for the videos visible under the current
+                        filter
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          Median Views
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {formatCompactNumber(benchmarkSummary.medianViews)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          Median Breakout
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {formatCompactNumber(benchmarkSummary.medianBreakoutScore)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          Median Views/Hour
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {formatCompactNumber(benchmarkSummary.medianViewsPerHour)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          High Breakout
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {formatCompactNumber(
+                            benchmarkSummary.highBreakoutThreshold
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          High Velocity
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {formatCompactNumber(
+                            benchmarkSummary.highVelocityThreshold
+                          )}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          High Engagement
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {(benchmarkSummary.highEngagementThreshold * 100).toFixed(1)}
+                          %
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                   <div className="mb-4">

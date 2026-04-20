@@ -85,6 +85,15 @@ export type TopSignals = {
   strongestCommentVideo: TopSignalVideo | null;
 };
 
+export type BenchmarkSummary = {
+  medianViews: number;
+  medianBreakoutScore: number;
+  medianViewsPerHour: number;
+  highBreakoutThreshold: number;
+  highVelocityThreshold: number;
+  highEngagementThreshold: number;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -95,6 +104,22 @@ type CreatorVideoSummary = {
 
 function getSafeNumber(value?: number) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function getPercentile(values: number[], percentile: number) {
+  if (values.length === 0) {
+    return 0;
+  }
+
+  const sortedValues = [...values].sort((leftValue, rightValue) => {
+    return leftValue - rightValue;
+  });
+  const index = Math.min(
+    sortedValues.length - 1,
+    Math.max(0, Math.ceil(sortedValues.length * percentile) - 1)
+  );
+
+  return sortedValues[index] ?? 0;
 }
 
 function enrichVideoMetrics(video: Video): TopSignalVideo {
@@ -394,6 +419,60 @@ export function getTopSignals(videos: Video[]): TopSignals {
 
       return leftVideo.commentDensity - rightVideo.commentDensity;
     }),
+  };
+}
+
+export function getBenchmarkSummary(videos: Video[]): BenchmarkSummary {
+  if (videos.length === 0) {
+    return {
+      medianViews: 0,
+      medianBreakoutScore: 0,
+      medianViewsPerHour: 0,
+      highBreakoutThreshold: 0,
+      highVelocityThreshold: 0,
+      highEngagementThreshold: 0,
+    };
+  }
+
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+
+  return {
+    medianViews: Math.round(
+      getPercentile(
+        enrichedVideos.map((video) => getSafeNumber(video.viewCount)),
+        0.5
+      )
+    ),
+    medianBreakoutScore: Math.round(
+      getPercentile(
+        enrichedVideos.map((video) => video.breakoutScore),
+        0.5
+      )
+    ),
+    medianViewsPerHour: Math.round(
+      getPercentile(
+        enrichedVideos.map((video) => video.viewsPerHour),
+        0.5
+      )
+    ),
+    highBreakoutThreshold: Math.round(
+      getPercentile(
+        enrichedVideos.map((video) => video.breakoutScore),
+        0.75
+      )
+    ),
+    highVelocityThreshold: Math.round(
+      getPercentile(
+        enrichedVideos.map((video) => video.viewsPerHour),
+        0.75
+      )
+    ),
+    highEngagementThreshold: Number(
+      getPercentile(
+        enrichedVideos.map((video) => video.engagementRate),
+        0.75
+      ).toFixed(3)
+    ),
   };
 }
 
