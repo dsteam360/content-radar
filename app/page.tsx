@@ -1002,7 +1002,7 @@ export default function Home() {
                 </span>
               </div>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col items-end gap-1">
               <button
                 type="button"
                 onClick={copyInsightPayload}
@@ -1020,6 +1020,22 @@ export default function Home() {
                     ? "Copy failed"
                     : "Copy Insight Payload"}
               </button>
+              <p className="text-[11px] text-zinc-500">
+                Copies JSON snapshot of current dashboard state
+              </p>
+              {copyPayloadState === "copied" && (
+                <p className="text-[11px] text-emerald-300">
+                  Paste into a text editor to inspect the payload
+                </p>
+              )}
+              {copyPayloadState === "failed" && (
+                <p className="text-[11px] text-red-300">
+                  Clipboard access was blocked by the browser
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-2">
               {videoFilterOptions.map((option) => (
                 <button
                   key={option}
