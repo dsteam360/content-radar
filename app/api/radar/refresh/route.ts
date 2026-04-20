@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
+import { hasSupabaseAdminEnv } from "@/app/lib/env";
 import { executeRadarRefresh } from "@/app/lib/radar-refresh";
 
 export async function POST() {
   try {
+    if (!hasSupabaseAdminEnv()) {
+      return NextResponse.json(
+        {
+          error:
+            "Snapshot persistence is not configured yet. Add SUPABASE_SERVICE_ROLE_KEY before running a persisted manual refresh.",
+        },
+        { status: 503 }
+      );
+    }
+
     const result = await executeRadarRefresh("manual");
 
     return NextResponse.json({ refresh: result });

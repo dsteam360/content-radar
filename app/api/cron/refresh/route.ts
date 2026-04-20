@@ -1,6 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getCronEnv } from "@/app/lib/env";
+import { getCronEnv, hasSupabaseAdminEnv } from "@/app/lib/env";
 import { executeRadarRefresh } from "@/app/lib/radar-refresh";
 
 function isAuthorized(request: Request) {
@@ -21,6 +21,17 @@ function isAuthorized(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    if (!hasSupabaseAdminEnv()) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Snapshot persistence is not configured yet. Add SUPABASE_SERVICE_ROLE_KEY before running scheduled refreshes.",
+        },
+        { status: 503 }
+      );
+    }
+
     if (!isAuthorized(request)) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }

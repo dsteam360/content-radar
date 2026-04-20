@@ -119,6 +119,35 @@ export type RadarHistoryView = {
   recentSnapshots: RecentSnapshotListItem[];
 };
 
+export function getEmptyRadarHistoryView(summary?: string): RadarHistoryView {
+  return {
+    health: {
+      snapshotCount: 0,
+      successfulSnapshotCount: 0,
+      lastRefreshAt: null,
+      lastSuccessfulSnapshotAt: null,
+      lastRunType: null,
+      lastSnapshotStatus: null,
+      hasEnoughHistory: false,
+      summary:
+        summary ??
+        "No stored snapshots yet. Run a manual refresh to create the first historical baseline.",
+    },
+    comparison: {
+      available: false,
+      basedOnSnapshotIds: [],
+      videoCount: buildMetricDelta(0, null),
+      averageBreakoutScore: buildMetricDelta(0, null),
+      medianViews: buildMetricDelta(0, null),
+      medianViewsPerHour: buildMetricDelta(0, null),
+      creatorCoveragePercent: buildMetricDelta(0, null),
+      summary: "No snapshot history is available yet.",
+    },
+    creatorTrends: [],
+    recentSnapshots: [],
+  };
+}
+
 function toSnapshotSummary(
   summary: RadarSnapshotRecord["summary_json"],
   fallbackCreatorCount: number
