@@ -38,6 +38,10 @@ export type CreatorLeaderboardEntry = {
   topVideoBreakoutScore: number;
   videosAnalyzed: number;
   consistencyScore: number;
+  breakoutRate: number;
+  avgViewsPerHour: number;
+  avgLikes: number;
+  avgComments: number;
 };
 
 export type VideoFilter =
@@ -566,5 +570,9 @@ export function getCreatorLeaderboardEntry(
     topVideoBreakoutScore: creatorAnalytics.topVideoBreakoutScore,
     videosAnalyzed: creatorAnalytics.totalVideos,
     consistencyScore: creatorAnalytics.consistencyScore,
+    breakoutRate: creatorAnalytics.breakoutRate,
+    avgViewsPerHour: creatorAnalytics.avgViewsPerHour,
+    avgLikes: creatorAnalytics.avgLikes,
+    avgComments: creatorAnalytics.avgComments,
   };
 }

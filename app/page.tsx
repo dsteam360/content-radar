@@ -2,12 +2,12 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import {
+  aggregateCreatorStats,
   formatCompactNumber,
   formatPublishedTime,
   getAnalystTakeaways,
   getBreakoutReason,
   getCreatorLeaderboardEntry,
-  getCreatorVideoSummary,
   getPatternSnapshot,
   getTopBreakoutScore,
   getWinningPatterns,
@@ -378,7 +378,7 @@ export default function Home() {
                   {creatorLeaderboard.map((entry, index) => (
                     <div
                       key={entry.creatorId}
-                      className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 md:grid-cols-[auto,1.2fr,repeat(4,minmax(0,1fr))]"
+                      className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950/70 p-4 md:grid-cols-[auto,1.2fr,repeat(5,minmax(0,1fr))]"
                     >
                       <div className="flex items-center">
                         <span className="rounded-full bg-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-200">
@@ -411,10 +411,18 @@ export default function Home() {
                       </div>
                       <div>
                         <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                          Top Breakout
+                          Breakout Rate
                         </p>
                         <p className="mt-1 text-sm font-semibold text-white">
-                          {formatCompactNumber(entry.topVideoBreakoutScore)}
+                          {entry.breakoutRate}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                          Avg Views/Hour
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {formatCompactNumber(entry.avgViewsPerHour)}
                         </p>
                       </div>
                       <div>
@@ -545,7 +553,7 @@ export default function Home() {
                     matchesVideoFilter(video, videoFilter)
                   );
                   const topBreakoutScore = getTopBreakoutScore(creatorVideos);
-                  const creatorSummary = getCreatorVideoSummary(creatorVideos);
+                  const creatorAnalytics = aggregateCreatorStats(creatorVideos);
 
                   return (
                     <div
@@ -573,7 +581,7 @@ export default function Home() {
                             Recent Views
                           </p>
                           <p className="mt-1 text-sm font-semibold text-white">
-                            {formatCompactNumber(creatorSummary.totalRecentViews)}
+                            {formatCompactNumber(creatorAnalytics.totalRecentViews)}
                           </p>
                         </div>
                         <div>
@@ -581,15 +589,29 @@ export default function Home() {
                             Avg Breakout
                           </p>
                           <p className="mt-1 text-sm font-semibold text-white">
-                            {formatCompactNumber(creatorSummary.averageBreakoutScore)}
+                            {formatCompactNumber(creatorAnalytics.avgBreakoutScore)}
                           </p>
                         </div>
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-zinc-500">
-                            Consistency
+                            Breakout Rate
                           </p>
                           <p className="mt-1 text-sm font-semibold text-white">
-                            {creatorSummary.consistencyScore}%
+                            {creatorAnalytics.breakoutRate}%
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+                            Avg Views/Hour
+                          </p>
+                          <p className="mt-1 text-sm font-semibold text-white">
+                            {formatCompactNumber(creatorAnalytics.avgViewsPerHour)}
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {formatCompactNumber(creatorAnalytics.avgLikes)} likes avg
+                          </p>
+                          <p className="mt-1 text-xs text-zinc-500">
+                            {formatCompactNumber(creatorAnalytics.avgComments)} comments avg
                           </p>
                         </div>
                         <div className="md:col-span-2">
@@ -597,10 +619,10 @@ export default function Home() {
                             Top Video
                           </p>
                           <p className="mt-1 line-clamp-1 text-sm font-semibold text-white">
-                            {creatorSummary.topVideoTitle}
+                            {creatorAnalytics.topVideoTitle}
                           </p>
                           <p className="mt-1 text-xs text-zinc-400">
-                            Breakout {formatCompactNumber(creatorSummary.topVideoBreakoutScore)}
+                            Breakout {formatCompactNumber(creatorAnalytics.topVideoBreakoutScore)}
                           </p>
                         </div>
                       </div>
