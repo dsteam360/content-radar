@@ -11,6 +11,7 @@ import {
   getContentOpportunities,
   getCreatorComparison,
   getCreatorBenchmarkStatus,
+  getCreatorMomentumDelta,
   getCreatorLeaderboardEntry,
   getExecutiveSummary,
   getPatternSnapshot,
@@ -26,6 +27,7 @@ import {
   type CreatorBenchmarkStatus,
   type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
+  type CreatorMomentumDelta,
   type ScenarioMode,
   type TopSignalVideo,
   type Video,
@@ -172,6 +174,31 @@ function ComparisonMetricRow({
         {formatter(metric.rightValue)}
       </p>
     </div>
+  );
+}
+
+type MomentumBadgeProps = {
+  momentum: CreatorMomentumDelta;
+};
+
+function MomentumBadge({ momentum }: MomentumBadgeProps) {
+  const toneClasses =
+    momentum.momentumLabel === "Accelerating"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : momentum.momentumLabel === "Cooling"
+        ? "border-red-500/30 bg-red-500/10 text-red-300"
+        : "border-zinc-700 bg-zinc-900 text-zinc-300";
+
+  const deltaPrefix =
+    momentum.viewsPerHourDelta > 0 ? "+" : momentum.viewsPerHourDelta < 0 ? "" : "";
+
+  return (
+    <span
+      className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClasses}`}
+    >
+      {momentum.momentumLabel} · {deltaPrefix}
+      {formatCompactNumber(momentum.viewsPerHourDelta)} vph
+    </span>
   );
 }
 
@@ -1023,6 +1050,9 @@ export default function Home() {
                         <p className="mt-1 text-xs text-zinc-500">
                           {entry.videosAnalyzed} videos analyzed
                         </p>
+                        <div className="mt-2">
+                          <MomentumBadge momentum={entry.momentum} />
+                        </div>
                       </div>
                       <div>
                         <p className="text-[11px] uppercase tracking-wide text-zinc-500">
@@ -1404,6 +1434,7 @@ export default function Home() {
                   ).visibleVideos;
                   const topBreakoutScore = getTopBreakoutScore(creatorVideos);
                   const creatorAnalytics = aggregateCreatorStats(creatorVideos);
+                  const creatorMomentum = getCreatorMomentumDelta(creatorVideos);
                   const creatorBenchmarkStatus = hasBenchmarkData
                     ? getCreatorBenchmarkStatus(creatorAnalytics, benchmarkSummary)
                     : null;
@@ -1442,6 +1473,7 @@ export default function Home() {
                             label="Engagement"
                             status={creatorBenchmarkStatus.engagementStatus}
                           />
+                          <MomentumBadge momentum={creatorMomentum} />
                         </div>
                       )}
 

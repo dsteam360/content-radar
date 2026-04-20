@@ -42,6 +42,7 @@ export type CreatorLeaderboardEntry = {
   avgViewsPerHour: number;
   avgLikes: number;
   avgComments: number;
+  momentum: CreatorMomentumDelta;
 };
 
 export type VideoFilter =
@@ -77,6 +78,13 @@ export type CreatorAnalytics = {
   topVideoTitle: string;
   topVideoBreakoutScore: number;
   consistencyScore: number;
+};
+
+export type CreatorMomentumDelta = {
+  breakoutDelta: number;
+  viewsPerHourDelta: number;
+  engagementDelta: number;
+  momentumLabel: "Accelerating" | "Stable" | "Cooling";
 };
 
 export type TopSignalVideo = Video & {
@@ -271,6 +279,69 @@ export function getTopBreakoutScore(videos: Video[]) {
   return videos.reduce((topScore, video) => {
     return Math.max(topScore, getSafeNumber(video.breakoutScore));
   }, 0);
+}
+
+export function getCreatorMomentumDelta(videos: Video[]): CreatorMomentumDelta {
+  if (videos.length < 2) {
+    return {
+      breakoutDelta: 0,
+      viewsPerHourDelta: 0,
+      engagementDelta: 0,
+      momentumLabel: "Stable",
+    };
+  }
+
+  const orderedVideos = [...videos]
+    .map(enrichVideoMetrics)
+    .sort((leftVideo, rightVideo) => {
+      return (
+        new Date(rightVideo.publishedAt).getTime() -
+        new Date(leftVideo.publishedAt).getTime()
+      );
+    });
+
+  const splitIndex = Math.ceil(orderedVideos.length / 2);
+  const recentVideos = orderedVideos.slice(0, splitIndex);
+  const olderVideos = orderedVideos.slice(splitIndex);
+
+  if (recentVideos.length === 0 || olderVideos.length === 0) {
+    return {
+      breakoutDelta: 0,
+      viewsPerHourDelta: 0,
+      engagementDelta: 0,
+      momentumLabel: "Stable",
+    };
+  }
+
+  const getAverage = (
+    slice: TopSignalVideo[],
+    selector: (video: TopSignalVideo) => number
+  ) => {
+    return slice.reduce((sum, video) => sum + selector(video), 0) / slice.length;
+  };
+
+  const breakoutDelta =
+    getAverage(recentVideos, (video) => video.breakoutScore) -
+    getAverage(olderVideos, (video) => video.breakoutScore);
+  const viewsPerHourDelta =
+    getAverage(recentVideos, (video) => video.viewsPerHour) -
+    getAverage(olderVideos, (video) => video.viewsPerHour);
+  const engagementDelta =
+    getAverage(recentVideos, (video) => video.engagementRate) -
+    getAverage(olderVideos, (video) => video.engagementRate);
+
+  const momentumScore =
+    (breakoutDelta > 0 ? 1 : breakoutDelta < 0 ? -1 : 0) +
+    (viewsPerHourDelta > 0 ? 2 : viewsPerHourDelta < 0 ? -2 : 0) +
+    (engagementDelta > 0 ? 1 : engagementDelta < 0 ? -1 : 0);
+
+  return {
+    breakoutDelta: Math.round(breakoutDelta),
+    viewsPerHourDelta: Math.round(viewsPerHourDelta),
+    engagementDelta: Number(engagementDelta.toFixed(3)),
+    momentumLabel:
+      momentumScore >= 2 ? "Accelerating" : momentumScore <= -2 ? "Cooling" : "Stable",
+  };
 }
 
 export function aggregateCreatorStats(videos: Video[]): CreatorAnalytics {
@@ -1249,6 +1320,7 @@ export function getCreatorLeaderboardEntry(
   videos: Video[]
 ): CreatorLeaderboardEntry {
   const creatorAnalytics = aggregateCreatorStats(videos);
+  const momentum = getCreatorMomentumDelta(videos);
 
   return {
     creatorId: creator.id,
@@ -1262,5 +1334,6 @@ export function getCreatorLeaderboardEntry(
     avgViewsPerHour: creatorAnalytics.avgViewsPerHour,
     avgLikes: creatorAnalytics.avgLikes,
     avgComments: creatorAnalytics.avgComments,
+    momentum,
   };
 }
