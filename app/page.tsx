@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import {
   aggregateCreatorStats,
+  buildInsightExportPayload,
   formatCompactNumber,
   formatPublishedTime,
   getAnalystTakeaways,
@@ -33,6 +34,7 @@ import {
   type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
   type CreatorMomentumDelta,
+  type InsightExportPayload,
   type InsightConfidence,
   type OutlierAlert,
   type ScenarioMode,
@@ -762,11 +764,33 @@ export default function Home() {
       })?.name ?? "Custom View"
     );
   }, [leaderboardSortMode, scenarioMode, videoFilter]);
+  const insightExportPayload: InsightExportPayload = buildInsightExportPayload({
+    activeViewName: activeSavedView,
+    videoFilter,
+    scenarioMode,
+    leaderboardSortMode,
+    executiveSummary,
+    insightConfidence,
+    benchmarkSummary,
+    creatorDiversification,
+    outlierAlerts,
+    signalShiftSummary,
+    topSignals,
+    topCreators: creatorLeaderboard,
+    watchlistCandidates,
+    contentOpportunities,
+    analystTakeaways,
+    winningPatterns,
+  });
 
   const retryYoutubeFetch = () => {
     if (!breakoutLoading && youtubeCreators.length > 0) {
       loadBreakoutPosts(youtubeCreators);
     }
+  };
+
+  const logInsightPayload = () => {
+    console.log("INSIGHT_PAYLOAD", insightExportPayload);
   };
 
   const applySavedView = (preset: SavedViewPreset) => {
@@ -952,6 +976,13 @@ export default function Home() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={logInsightPayload}
+                className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+              >
+                Log Insight Payload
+              </button>
               {videoFilterOptions.map((option) => (
                 <button
                   key={option}

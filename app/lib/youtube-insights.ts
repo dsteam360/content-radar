@@ -184,6 +184,79 @@ export type SignalShiftSummary = {
   bullets: string[];
 };
 
+export type InsightExportPayloadInput = {
+  activeViewName: string;
+  videoFilter: VideoFilter;
+  scenarioMode: ScenarioMode;
+  leaderboardSortMode: string;
+  executiveSummary: ExecutiveSummary;
+  insightConfidence: InsightConfidence;
+  benchmarkSummary: BenchmarkSummary;
+  creatorDiversification: CreatorDiversificationSummary;
+  outlierAlerts: OutlierAlert[];
+  signalShiftSummary: SignalShiftSummary;
+  topSignals: TopSignals;
+  topCreators: CreatorLeaderboardEntry[];
+  watchlistCandidates: WatchlistCandidate[];
+  contentOpportunities: string[];
+  analystTakeaways: string[];
+  winningPatterns: string[];
+};
+
+export type InsightExportPayload = {
+  generatedAt: string;
+  activeViewName: string;
+  videoFilter: VideoFilter;
+  scenarioMode: ScenarioMode;
+  leaderboardSortMode: string;
+  executiveSummary: ExecutiveSummary;
+  insightConfidence: InsightConfidence;
+  benchmarkSummary: BenchmarkSummary;
+  creatorDiversification: CreatorDiversificationSummary;
+  outlierAlerts: OutlierAlert[];
+  signalShiftSummary: SignalShiftSummary;
+  topSignals: {
+    topBreakoutVideo: {
+      id: string;
+      title: string;
+      channelTitle?: string;
+      breakoutScore: number;
+    } | null;
+    fastestVideo: {
+      id: string;
+      title: string;
+      channelTitle?: string;
+      viewsPerHour: number;
+    } | null;
+    mostEngagingVideo: {
+      id: string;
+      title: string;
+      channelTitle?: string;
+      engagementRate: number;
+    } | null;
+    strongestCommentVideo: {
+      id: string;
+      title: string;
+      channelTitle?: string;
+      commentCount: number;
+    } | null;
+  };
+  topCreators: Array<{
+    creatorId: number;
+    creatorName: string;
+    averageBreakoutScore: number;
+    breakoutRate: number;
+    avgViewsPerHour: number;
+    totalRecentViews: number;
+    consistencyScore: number;
+    momentumLabel: CreatorMomentumDelta["momentumLabel"];
+  }>;
+  watchlistCandidates: WatchlistCandidate[];
+  contentOpportunities: string[];
+  analystTakeaways: string[];
+  winningPatterns: string[];
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -261,6 +334,23 @@ function enrichVideoMetrics(video: Video): TopSignalVideo {
     engagementRate,
     commentDensity,
   };
+}
+
+function serializeTopSignalVideo<TMetric extends string>(
+  video: TopSignalVideo | null,
+  metric: TMetric,
+  value: number
+): { id: string; title: string; channelTitle?: string } & Record<TMetric, number> | null {
+  if (!video) {
+    return null;
+  }
+
+  return {
+    id: video.id,
+    title: video.title,
+    channelTitle: video.channelTitle,
+    [metric]: value,
+  } as { id: string; title: string; channelTitle?: string } & Record<TMetric, number>;
 }
 
 export function formatPublishedTime(publishedAt: string) {
@@ -751,6 +841,62 @@ export function getSignalShiftSummary(
         ? "This view is changing the signal mix"
         : "No meaningful signal shift",
     bullets: uniqueBullets,
+  };
+}
+
+export function buildInsightExportPayload(
+  input: InsightExportPayloadInput
+): InsightExportPayload {
+  return {
+    generatedAt: new Date().toISOString(),
+    activeViewName: input.activeViewName,
+    videoFilter: input.videoFilter,
+    scenarioMode: input.scenarioMode,
+    leaderboardSortMode: input.leaderboardSortMode,
+    executiveSummary: input.executiveSummary,
+    insightConfidence: input.insightConfidence,
+    benchmarkSummary: input.benchmarkSummary,
+    creatorDiversification: input.creatorDiversification,
+    outlierAlerts: input.outlierAlerts,
+    signalShiftSummary: input.signalShiftSummary,
+    topSignals: {
+      topBreakoutVideo: serializeTopSignalVideo(
+        input.topSignals.topBreakoutVideo,
+        "breakoutScore",
+        getSafeNumber(input.topSignals.topBreakoutVideo?.breakoutScore)
+      ),
+      fastestVideo: serializeTopSignalVideo(
+        input.topSignals.fastestVideo,
+        "viewsPerHour",
+        getSafeNumber(input.topSignals.fastestVideo?.viewsPerHour)
+      ),
+      mostEngagingVideo: serializeTopSignalVideo(
+        input.topSignals.mostEngagingVideo,
+        "engagementRate",
+        getSafeNumber(input.topSignals.mostEngagingVideo?.engagementRate)
+      ),
+      strongestCommentVideo: serializeTopSignalVideo(
+        input.topSignals.strongestCommentVideo,
+        "commentCount",
+        getSafeNumber(input.topSignals.strongestCommentVideo?.commentCount)
+      ),
+    },
+    topCreators: input.topCreators.slice(0, 3).map((creator) => {
+      return {
+        creatorId: creator.creatorId,
+        creatorName: creator.creatorName,
+        averageBreakoutScore: creator.averageBreakoutScore,
+        breakoutRate: creator.breakoutRate,
+        avgViewsPerHour: creator.avgViewsPerHour,
+        totalRecentViews: creator.totalRecentViews,
+        consistencyScore: creator.consistencyScore,
+        momentumLabel: creator.momentum.momentumLabel,
+      };
+    }),
+    watchlistCandidates: input.watchlistCandidates.slice(0, 5),
+    contentOpportunities: input.contentOpportunities,
+    analystTakeaways: input.analystTakeaways,
+    winningPatterns: input.winningPatterns,
   };
 }
 
