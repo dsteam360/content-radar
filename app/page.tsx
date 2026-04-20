@@ -767,6 +767,9 @@ export default function Home() {
       })?.name ?? "Custom View"
     );
   }, [leaderboardSortMode, scenarioMode, videoFilter]);
+  const defaultSavedViewPreset =
+    savedViewPresets.find((preset) => preset.name === "Default Radar") ??
+    savedViewPresets[0];
   const insightExportPayload: InsightExportPayload = buildInsightExportPayload({
     activeViewName: activeSavedView,
     videoFilter,
@@ -824,6 +827,12 @@ export default function Home() {
     setVideoFilter(preset.videoFilter);
     setScenarioMode(preset.scenarioMode);
     setLeaderboardSortMode(preset.leaderboardSortMode);
+  };
+
+  const resetDashboardControls = () => {
+    if (defaultSavedViewPreset) {
+      applySavedView(defaultSavedViewPreset);
+    }
   };
 
   useEffect(() => {
@@ -1003,23 +1012,32 @@ export default function Home() {
               </div>
             </div>
             <div className="flex flex-col items-end gap-1">
-              <button
-                type="button"
-                onClick={copyInsightPayload}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  copyPayloadState === "copied"
-                    ? "bg-emerald-500/15 text-emerald-300"
+              <div className="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={resetDashboardControls}
+                  className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                >
+                  Reset View
+                </button>
+                <button
+                  type="button"
+                  onClick={copyInsightPayload}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    copyPayloadState === "copied"
+                      ? "bg-emerald-500/15 text-emerald-300"
+                      : copyPayloadState === "failed"
+                        ? "bg-red-500/15 text-red-300"
+                        : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {copyPayloadState === "copied"
+                    ? "Copied"
                     : copyPayloadState === "failed"
-                      ? "bg-red-500/15 text-red-300"
-                      : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-                }`}
-              >
-                {copyPayloadState === "copied"
-                  ? "Copied"
-                  : copyPayloadState === "failed"
-                    ? "Copy failed"
-                    : "Copy Insight Payload"}
-              </button>
+                      ? "Copy failed"
+                      : "Copy Insight Payload"}
+                </button>
+              </div>
               <p className="text-[11px] text-zinc-500">
                 Copies JSON snapshot of current dashboard state
               </p>
