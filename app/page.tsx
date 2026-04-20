@@ -9,6 +9,7 @@ import {
   getBenchmarkSummary,
   getBreakoutReason,
   getContentOpportunities,
+  getCreatorDiversificationSummary,
   getCreatorComparison,
   getCreatorBenchmarkStatus,
   getCreatorMomentumDelta,
@@ -26,6 +27,7 @@ import {
   normalizeYoutubeHandle,
   sortVideosByPerformance,
   type Creator,
+  type CreatorDiversificationSummary,
   type CreatorBenchmarkStatus,
   type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
@@ -253,6 +255,65 @@ function OutlierAlertCard({ alert }: OutlierAlertCardProps) {
         <p className="text-sm font-semibold text-white">{alert.title}</p>
       </div>
       <p className="mt-2 text-sm text-zinc-300">{alert.message}</p>
+    </div>
+  );
+}
+
+type CreatorDiversificationCardProps = {
+  diversification: CreatorDiversificationSummary;
+};
+
+function CreatorDiversificationCard({
+  diversification,
+}: CreatorDiversificationCardProps) {
+  const toneClasses =
+    diversification.level === "High"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : diversification.level === "Medium"
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+        : "border-zinc-700 bg-zinc-900 text-zinc-300";
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-semibold text-white">
+            Creator Diversification
+          </h3>
+          <p className="text-sm text-gray-400">
+            How broad the current visible opportunity set is across creators
+          </p>
+        </div>
+        <span
+          className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClasses}`}
+        >
+          {diversification.level}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Active Creators
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            {diversification.activeCreators}
+          </p>
+        </div>
+        <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 p-4">
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Leader Share
+          </p>
+          <p className="mt-1 text-sm font-semibold text-white">
+            {diversification.leaderSharePercent}%
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            {diversification.creatorShareLeader}
+          </p>
+        </div>
+      </div>
+
+      <p className="mt-4 text-sm text-zinc-300">{diversification.summary}</p>
     </div>
   );
 }
@@ -563,6 +624,9 @@ export default function Home() {
     creators,
     breakoutPosts,
     videoFilter
+  );
+  const creatorDiversification = getCreatorDiversificationSummary(
+    visibleFilteredVideos
   );
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
@@ -1319,6 +1383,10 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                <CreatorDiversificationCard
+                  diversification={creatorDiversification}
+                />
 
                 {visibleFilteredVideos.length > 0 && (
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">

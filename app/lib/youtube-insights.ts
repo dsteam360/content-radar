@@ -170,6 +170,14 @@ export type OutlierAlert = {
   message: string;
 };
 
+export type CreatorDiversificationSummary = {
+  level: "High" | "Medium" | "Low";
+  activeCreators: number;
+  creatorShareLeader: string;
+  leaderSharePercent: number;
+  summary: string;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -523,6 +531,75 @@ export function getPatternSnapshot(videos: Video[]): PatternSnapshot {
     averageViews: Math.round(totalViews / videos.length),
     averageBreakoutScore: Math.round(totalBreakoutScore / videos.length),
     mostCommonReason,
+  };
+}
+
+export function getCreatorDiversificationSummary(
+  videos: Video[]
+): CreatorDiversificationSummary {
+  const { smallSampleMaximumVideos } = INTELLIGENCE_THRESHOLDS.analysis;
+
+  if (videos.length === 0) {
+    return {
+      level: "Low",
+      activeCreators: 0,
+      creatorShareLeader: "No active creator",
+      leaderSharePercent: 0,
+      summary: "No visible creator mix is available yet, so diversification cannot be assessed.",
+    };
+  }
+
+  const creatorCounts = videos.reduce<Record<string, number>>((counts, video) => {
+    const creatorName = video.channelTitle?.trim() || "Unknown creator";
+    counts[creatorName] = (counts[creatorName] ?? 0) + 1;
+    return counts;
+  }, {});
+
+  const rankedCreators = Object.entries(creatorCounts).sort(
+    (leftEntry, rightEntry) => rightEntry[1] - leftEntry[1]
+  );
+  const leaderEntry = rankedCreators[0] ?? ["Unknown creator", videos.length];
+  const activeCreators = rankedCreators.length;
+  const leaderSharePercent = Math.round((leaderEntry[1] / videos.length) * 100);
+
+  if (videos.length <= smallSampleMaximumVideos) {
+    return {
+      level: "Low",
+      activeCreators,
+      creatorShareLeader: leaderEntry[0],
+      leaderSharePercent,
+      summary:
+        "The visible set is still small, so any diversification read should be treated as directional only.",
+    };
+  }
+
+  if (activeCreators >= 4 && leaderSharePercent <= 35) {
+    return {
+      level: "High",
+      activeCreators,
+      creatorShareLeader: leaderEntry[0],
+      leaderSharePercent,
+      summary:
+        "The current opportunity set is broadly spread across creators, which makes the read more balanced.",
+    };
+  }
+
+  if (activeCreators >= 2 && leaderSharePercent <= 55) {
+    return {
+      level: "Medium",
+      activeCreators,
+      creatorShareLeader: leaderEntry[0],
+      leaderSharePercent,
+      summary: `${leaderEntry[0]} leads the current set, but the opportunity mix still has multiple active contributors.`,
+    };
+  }
+
+  return {
+    level: "Low",
+    activeCreators,
+    creatorShareLeader: leaderEntry[0],
+    leaderSharePercent,
+    summary: `${leaderEntry[0]} is supplying most of the visible opportunities, so the current read is fairly concentrated.`,
   };
 }
 
