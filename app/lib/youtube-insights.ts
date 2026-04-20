@@ -1,5 +1,9 @@
 import { INTELLIGENCE_THRESHOLDS } from "@/app/lib/config/thresholds";
-import { getBreakoutReason } from "@/app/lib/youtube-scoring";
+import {
+  calculateBreakoutScore,
+  getBreakoutReason,
+  getHoursSincePublished,
+} from "@/app/lib/youtube-scoring";
 
 export { getBreakoutReason } from "@/app/lib/youtube-scoring";
 
@@ -16,6 +20,7 @@ export type Video = {
   id: string;
   title: string;
   publishedAt: string;
+  currentTimestamp?: number;
   thumbnail?: string;
   channelTitle?: string;
   viewCount?: number;
@@ -46,6 +51,21 @@ export type PatternSnapshot = {
   averageViews: number;
   averageBreakoutScore: number;
   mostCommonReason: string;
+};
+
+export type CreatorAnalytics = {
+  totalVideos: number;
+  avgViews: number;
+  avgLikes: number;
+  avgComments: number;
+  avgBreakoutScore: number;
+  breakoutRate: number;
+  avgViewsPerHour: number;
+  topPerformer: Video | null;
+  totalRecentViews: number;
+  topVideoTitle: string;
+  topVideoBreakoutScore: number;
+  consistencyScore: number;
 };
 
 type CreatorVideoSummary = {
@@ -104,46 +124,103 @@ export function getTopBreakoutScore(videos: Video[]) {
   }, 0);
 }
 
-export function getCreatorVideoSummary(videos: Video[]): CreatorVideoSummary {
+export function aggregateCreatorStats(videos: Video[]): CreatorAnalytics {
   const { percentageBase, qualifiedVideoScoreMinimum } =
     INTELLIGENCE_THRESHOLDS.consistency;
 
   if (videos.length === 0) {
     return {
+      totalVideos: 0,
+      avgViews: 0,
+      avgLikes: 0,
+      avgComments: 0,
+      avgBreakoutScore: 0,
+      breakoutRate: 0,
+      avgViewsPerHour: 0,
+      topPerformer: null,
       totalRecentViews: 0,
-      averageBreakoutScore: 0,
       topVideoTitle: "No recent videos",
       topVideoBreakoutScore: 0,
       consistencyScore: 0,
     };
   }
 
-  const totalRecentViews = videos.reduce((totalViews, video) => {
-    return totalViews + getSafeNumber(video.viewCount);
-  }, 0);
+  const aggregatedVideos = videos.map((video) => {
+    const computedBreakoutScore = calculateBreakoutScore(video);
+    const computedBreakoutReason = getBreakoutReason({
+      ...video,
+      breakoutScore: computedBreakoutScore,
+    });
+    const safeViewCount = getSafeNumber(video.viewCount);
+    const safeLikeCount = getSafeNumber(video.likeCount);
+    const safeCommentCount = getSafeNumber(video.commentCount);
+    const viewsPerHour =
+      safeViewCount /
+      getHoursSincePublished(video.publishedAt, video.currentTimestamp);
 
-  const totalBreakoutScore = videos.reduce((totalScore, video) => {
-    return totalScore + getSafeNumber(video.breakoutScore);
-  }, 0);
+    return {
+      ...video,
+      breakoutScore: computedBreakoutScore,
+      breakoutReason: computedBreakoutReason,
+      safeViewCount,
+      safeLikeCount,
+      safeCommentCount,
+      viewsPerHour,
+    };
+  });
 
-  const topVideo = videos.reduce((currentTopVideo, video) => {
-    return getSafeNumber(video.breakoutScore) > getSafeNumber(currentTopVideo.breakoutScore)
+  const totalViews = aggregatedVideos.reduce((sum, video) => {
+    return sum + video.safeViewCount;
+  }, 0);
+  const totalLikes = aggregatedVideos.reduce((sum, video) => {
+    return sum + video.safeLikeCount;
+  }, 0);
+  const totalComments = aggregatedVideos.reduce((sum, video) => {
+    return sum + video.safeCommentCount;
+  }, 0);
+  const totalBreakoutScore = aggregatedVideos.reduce((sum, video) => {
+    return sum + video.breakoutScore;
+  }, 0);
+  const totalViewsPerHour = aggregatedVideos.reduce((sum, video) => {
+    return sum + video.viewsPerHour;
+  }, 0);
+  const breakoutVideos = aggregatedVideos.filter((video) => {
+    return video.breakoutScore >= qualifiedVideoScoreMinimum;
+  }).length;
+  const topPerformer = aggregatedVideos.reduce((currentTopVideo, video) => {
+    return video.breakoutScore > currentTopVideo.breakoutScore
       ? video
       : currentTopVideo;
-  }, videos[0]);
-
-  const videosAboveBreakoutThreshold = videos.filter((video) => {
-    return getSafeNumber(video.breakoutScore) >= qualifiedVideoScoreMinimum;
-  }).length;
+  }, aggregatedVideos[0]);
+  const breakoutRate = Math.round(
+    (breakoutVideos / aggregatedVideos.length) * percentageBase
+  );
 
   return {
-    totalRecentViews,
-    averageBreakoutScore: Math.round(totalBreakoutScore / videos.length),
-    topVideoTitle: topVideo.title || "Untitled video",
-    topVideoBreakoutScore: getSafeNumber(topVideo.breakoutScore),
-    consistencyScore: Math.round(
-      (videosAboveBreakoutThreshold / videos.length) * percentageBase
-    ),
+    totalVideos: aggregatedVideos.length,
+    avgViews: Math.round(totalViews / aggregatedVideos.length),
+    avgLikes: Math.round(totalLikes / aggregatedVideos.length),
+    avgComments: Math.round(totalComments / aggregatedVideos.length),
+    avgBreakoutScore: Math.round(totalBreakoutScore / aggregatedVideos.length),
+    breakoutRate,
+    avgViewsPerHour: Math.round(totalViewsPerHour / aggregatedVideos.length),
+    topPerformer,
+    totalRecentViews: totalViews,
+    topVideoTitle: topPerformer.title || "Untitled video",
+    topVideoBreakoutScore: topPerformer.breakoutScore,
+    consistencyScore: breakoutRate,
+  };
+}
+
+export function getCreatorVideoSummary(videos: Video[]): CreatorVideoSummary {
+  const creatorAnalytics = aggregateCreatorStats(videos);
+
+  return {
+    totalRecentViews: creatorAnalytics.totalRecentViews,
+    averageBreakoutScore: creatorAnalytics.avgBreakoutScore,
+    topVideoTitle: creatorAnalytics.topVideoTitle,
+    topVideoBreakoutScore: creatorAnalytics.topVideoBreakoutScore,
+    consistencyScore: creatorAnalytics.consistencyScore,
   };
 }
 
@@ -479,15 +556,15 @@ export function getCreatorLeaderboardEntry(
   creator: Creator,
   videos: Video[]
 ): CreatorLeaderboardEntry {
-  const creatorSummary = getCreatorVideoSummary(videos);
+  const creatorAnalytics = aggregateCreatorStats(videos);
 
   return {
     creatorId: creator.id,
     creatorName: creator.name,
-    totalRecentViews: creatorSummary.totalRecentViews,
-    averageBreakoutScore: creatorSummary.averageBreakoutScore,
-    topVideoBreakoutScore: creatorSummary.topVideoBreakoutScore,
-    videosAnalyzed: videos.length,
-    consistencyScore: creatorSummary.consistencyScore,
+    totalRecentViews: creatorAnalytics.totalRecentViews,
+    averageBreakoutScore: creatorAnalytics.avgBreakoutScore,
+    topVideoBreakoutScore: creatorAnalytics.topVideoBreakoutScore,
+    videosAnalyzed: creatorAnalytics.totalVideos,
+    consistencyScore: creatorAnalytics.consistencyScore,
   };
 }
