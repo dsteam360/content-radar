@@ -49,6 +49,106 @@ import {
 } from "./lib/youtube-insights";
 import { supabase } from "./lib/supabase";
 
+type LeaderboardSortMode =
+  | "Avg Breakout"
+  | "Breakout Rate"
+  | "Views/Hour"
+  | "Recent Views";
+
+type SavedViewName =
+  | "Default Radar"
+  | "Breakout Scan"
+  | "Engagement Scan"
+  | "Early Movers";
+
+type SavedViewPreset = {
+  name: SavedViewName;
+  videoFilter: VideoFilter;
+  scenarioMode: ScenarioMode;
+  leaderboardSortMode: LeaderboardSortMode;
+};
+
+const VIDEO_FILTER_OPTIONS: VideoFilter[] = [
+  "All",
+  "Top Breakouts",
+  "High Engagement",
+  "Recent Surge",
+];
+
+const SCENARIO_MODE_OPTIONS: ScenarioMode[] = [
+  "Balanced",
+  "Breakout Hunt",
+  "Engagement Hunt",
+  "Emerging Watchlist",
+];
+
+const LEADERBOARD_SORT_OPTIONS: LeaderboardSortMode[] = [
+  "Avg Breakout",
+  "Breakout Rate",
+  "Views/Hour",
+  "Recent Views",
+];
+
+const SAVED_VIEW_PRESETS: SavedViewPreset[] = [
+  {
+    name: "Default Radar",
+    videoFilter: "All",
+    scenarioMode: "Balanced",
+    leaderboardSortMode: "Avg Breakout",
+  },
+  {
+    name: "Breakout Scan",
+    videoFilter: "Top Breakouts",
+    scenarioMode: "Breakout Hunt",
+    leaderboardSortMode: "Avg Breakout",
+  },
+  {
+    name: "Engagement Scan",
+    videoFilter: "High Engagement",
+    scenarioMode: "Engagement Hunt",
+    leaderboardSortMode: "Breakout Rate",
+  },
+  {
+    name: "Early Movers",
+    videoFilter: "All",
+    scenarioMode: "Emerging Watchlist",
+    leaderboardSortMode: "Views/Hour",
+  },
+];
+
+const DEFAULT_SAVED_VIEW_PRESET =
+  SAVED_VIEW_PRESETS.find((preset) => preset.name === "Default Radar") ??
+  SAVED_VIEW_PRESETS[0];
+
+function formatHoursAge(hours: number) {
+  if (hours >= 24) {
+    return `${Math.round(hours / 24)}d`;
+  }
+
+  return `${Math.round(hours)}h`;
+}
+
+function formatLastUpdated(timestamp: number | null) {
+  if (!timestamp) {
+    return "Waiting for first fetch";
+  }
+
+  const diffMinutes = Math.floor((Date.now() - timestamp) / (1000 * 60));
+
+  if (diffMinutes <= 0) {
+    return "Just now";
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(timestamp));
+}
+
 type DashboardStateCardProps = {
   title: string;
   message: string;
@@ -107,7 +207,7 @@ function SignalCard({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+    <div className="flex h-full flex-col rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
       <p className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-2 line-clamp-2 text-sm font-semibold text-white">
         {video.title || "Untitled video"}
@@ -282,7 +382,7 @@ function CreatorDiversificationCard({
         : "border-zinc-700 bg-zinc-900 text-zinc-300";
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+    <div className="h-full rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-white">
@@ -341,7 +441,7 @@ function CreatorCoverageHealthCard({
         : "border-zinc-700 bg-zinc-900 text-zinc-300";
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+    <div className="h-full rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-white">Creator Coverage</h3>
@@ -401,7 +501,7 @@ function DataFreshnessCard({ freshness }: DataFreshnessCardProps) {
         : "border-zinc-700 bg-zinc-900 text-zinc-300";
 
   return (
-    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+    <div className="h-full rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-white">Data Freshness</h3>
@@ -475,23 +575,6 @@ function SignalShiftCard({ shiftSummary }: SignalShiftCardProps) {
 }
 
 export default function Home() {
-  type LeaderboardSortMode =
-    | "Avg Breakout"
-    | "Breakout Rate"
-    | "Views/Hour"
-    | "Recent Views";
-  type SavedViewName =
-    | "Default Radar"
-    | "Breakout Scan"
-    | "Engagement Scan"
-    | "Early Movers";
-  type SavedViewPreset = {
-    name: SavedViewName;
-    videoFilter: VideoFilter;
-    scenarioMode: ScenarioMode;
-    leaderboardSortMode: LeaderboardSortMode;
-  };
-
   const [creatorName, setCreatorName] = useState("");
   const [platform, setPlatform] = useState("");
   const [youtubeHandle, setYoutubeHandle] = useState("");
@@ -516,6 +599,9 @@ export default function Home() {
     null
   );
   const [rightComparedCreatorId, setRightComparedCreatorId] = useState<number | null>(
+    null
+  );
+  const [youtubeLastUpdatedAt, setYoutubeLastUpdatedAt] = useState<number | null>(
     null
   );
 
@@ -600,6 +686,7 @@ export default function Home() {
           breakoutEntries.map((entry) => [entry.creatorId, entry.videos])
         )
       );
+      setYoutubeLastUpdatedAt(Date.now());
     } catch (error) {
       console.error("Error loading breakout posts:", error);
       setYoutubeErrorMessage(
@@ -625,6 +712,7 @@ export default function Home() {
     } else {
       setBreakoutPosts({});
       setYoutubeErrorMessage("");
+      setYoutubeLastUpdatedAt(null);
     }
   }, [creators]);
 
@@ -692,14 +780,28 @@ export default function Home() {
     setDeletingId(null);
   }
 
-  const youtubeCreators = creators.filter(
-    (creator) =>
-      creator.platform.toLowerCase() === "youtube" &&
-      normalizeYoutubeHandle(creator.youtube_handle ?? "")
-  );
-  const totalFetchedYoutubeVideos = youtubeCreators.reduce((totalVideos, creator) => {
-    return totalVideos + (breakoutPosts[creator.id]?.length ?? 0);
-  }, 0);
+  const youtubeCreators = useMemo(() => {
+    return creators.filter(
+      (creator) =>
+        creator.platform.toLowerCase() === "youtube" &&
+        normalizeYoutubeHandle(creator.youtube_handle ?? "")
+    );
+  }, [creators]);
+
+  const creatorVideosById = useMemo(() => {
+    return Object.fromEntries(
+      youtubeCreators.map((creator) => [
+        creator.id,
+        sortVideosByPerformance(breakoutPosts[creator.id] ?? []),
+      ])
+    ) as Record<number, Video[]>;
+  }, [breakoutPosts, youtubeCreators]);
+
+  const totalFetchedYoutubeVideos = useMemo(() => {
+    return youtubeCreators.reduce((totalVideos, creator) => {
+      return totalVideos + (creatorVideosById[creator.id]?.length ?? 0);
+    }, 0);
+  }, [creatorVideosById, youtubeCreators]);
 
   const leaderboardSortValue = (entry: CreatorLeaderboardEntry) => {
     if (leaderboardSortMode === "Breakout Rate") {
@@ -743,142 +845,188 @@ export default function Home() {
     return leftCreator.creatorName.localeCompare(rightCreator.creatorName);
   };
 
-  const creatorLeaderboard = youtubeCreators
-    .map((creator) =>
-      getCreatorLeaderboardEntry(
-        creator,
-        sortVideosByPerformance(breakoutPosts[creator.id] ?? [])
+  const creatorLeaderboard = useMemo(() => {
+    return youtubeCreators
+      .map((creator) =>
+        getCreatorLeaderboardEntry(creator, creatorVideosById[creator.id] ?? [])
       )
-    )
-    .sort(sortCreatorLeaderboard);
+      .sort(sortCreatorLeaderboard);
+  }, [creatorVideosById, leaderboardSortMode, youtubeCreators]);
+
   const creatorAnalyticsById = useMemo(() => {
     return Object.fromEntries(
       youtubeCreators.map((creator) => [
         creator.id,
-        aggregateCreatorStats(sortVideosByPerformance(breakoutPosts[creator.id] ?? [])),
+        aggregateCreatorStats(creatorVideosById[creator.id] ?? []),
       ])
     ) as Record<number, ReturnType<typeof aggregateCreatorStats>>;
-  }, [breakoutPosts, youtubeCreators]);
+  }, [creatorVideosById, youtubeCreators]);
 
-  const baseVisibleFilteredVideos = youtubeCreators.flatMap((creator) =>
-    sortVideosByPerformance(breakoutPosts[creator.id] ?? []).filter((video) =>
-      matchesVideoFilter(video, videoFilter)
-    )
-  );
-  const benchmarkSummary = getBenchmarkSummary(baseVisibleFilteredVideos);
-  const scenarioViewData = getScenarioViewData(
-    baseVisibleFilteredVideos,
-    benchmarkSummary,
-    scenarioMode
-  );
+  const baseVisibleFilteredVideos = useMemo(() => {
+    return youtubeCreators.flatMap((creator) =>
+      (creatorVideosById[creator.id] ?? []).filter((video) =>
+        matchesVideoFilter(video, videoFilter)
+      )
+    );
+  }, [creatorVideosById, videoFilter, youtubeCreators]);
+
+  const benchmarkSummary = useMemo(() => {
+    return getBenchmarkSummary(baseVisibleFilteredVideos);
+  }, [baseVisibleFilteredVideos]);
+
+  const scenarioViewData = useMemo(() => {
+    return getScenarioViewData(
+      baseVisibleFilteredVideos,
+      benchmarkSummary,
+      scenarioMode
+    );
+  }, [baseVisibleFilteredVideos, benchmarkSummary, scenarioMode]);
+
   const visibleFilteredVideos = scenarioViewData.visibleVideos;
-  const executiveSummary = getExecutiveSummary(
-    visibleFilteredVideos,
-    benchmarkSummary,
-    scenarioMode
-  );
-  const insightConfidence = getInsightConfidence(visibleFilteredVideos);
-  const outlierAlerts = getOutlierAlerts(
-    visibleFilteredVideos,
-    creators,
-    breakoutPosts,
-    videoFilter
-  );
-  const creatorCoverageHealth = getCreatorCoverageHealth(creators, breakoutPosts);
-  const dataFreshness = getDataFreshnessSummary(visibleFilteredVideos);
-  const creatorDiversification = getCreatorDiversificationSummary(
-    visibleFilteredVideos
-  );
-  const signalShiftSummary = getSignalShiftSummary(
-    visibleFilteredVideos,
-    baseVisibleFilteredVideos
-  );
-  const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
-  const topSignals = getTopSignals(visibleFilteredVideos);
-  const contentOpportunities = getContentOpportunities(
-    visibleFilteredVideos,
-    benchmarkSummary
-  );
-  const watchlistCandidates = getWatchlistCandidates(
-    visibleFilteredVideos,
-    benchmarkSummary
-  );
-  const analystTakeaways = getAnalystTakeaways(
-    visibleFilteredVideos,
-    creators,
-    breakoutPosts,
-    videoFilter
-  );
-  const winningPatterns = getWinningPatterns(
-    visibleFilteredVideos,
-    creators,
-    breakoutPosts,
-    videoFilter
-  );
+
+  const executiveSummary = useMemo(() => {
+    return getExecutiveSummary(visibleFilteredVideos, benchmarkSummary, scenarioMode);
+  }, [benchmarkSummary, scenarioMode, visibleFilteredVideos]);
+
+  const insightConfidence = useMemo(() => {
+    return getInsightConfidence(visibleFilteredVideos);
+  }, [visibleFilteredVideos]);
+
+  const outlierAlerts = useMemo(() => {
+    return getOutlierAlerts(visibleFilteredVideos, creators, breakoutPosts, videoFilter);
+  }, [breakoutPosts, creators, videoFilter, visibleFilteredVideos]);
+
+  const creatorCoverageHealth = useMemo(() => {
+    return getCreatorCoverageHealth(creators, breakoutPosts);
+  }, [breakoutPosts, creators]);
+
+  const dataFreshness = useMemo(() => {
+    return getDataFreshnessSummary(visibleFilteredVideos);
+  }, [visibleFilteredVideos]);
+
+  const creatorDiversification = useMemo(() => {
+    return getCreatorDiversificationSummary(visibleFilteredVideos);
+  }, [visibleFilteredVideos]);
+
+  const signalShiftSummary = useMemo(() => {
+    return getSignalShiftSummary(visibleFilteredVideos, baseVisibleFilteredVideos);
+  }, [baseVisibleFilteredVideos, visibleFilteredVideos]);
+
+  const patternSnapshot = useMemo(() => {
+    return getPatternSnapshot(visibleFilteredVideos);
+  }, [visibleFilteredVideos]);
+
+  const topSignals = useMemo(() => {
+    return getTopSignals(visibleFilteredVideos);
+  }, [visibleFilteredVideos]);
+
+  const contentOpportunities = useMemo(() => {
+    return getContentOpportunities(visibleFilteredVideos, benchmarkSummary);
+  }, [benchmarkSummary, visibleFilteredVideos]);
+
+  const watchlistCandidates = useMemo(() => {
+    return getWatchlistCandidates(visibleFilteredVideos, benchmarkSummary);
+  }, [benchmarkSummary, visibleFilteredVideos]);
+
+  const analystTakeaways = useMemo(() => {
+    return getAnalystTakeaways(visibleFilteredVideos, creators, breakoutPosts, videoFilter);
+  }, [breakoutPosts, creators, videoFilter, visibleFilteredVideos]);
+
+  const winningPatterns = useMemo(() => {
+    return getWinningPatterns(visibleFilteredVideos, creators, breakoutPosts, videoFilter);
+  }, [breakoutPosts, creators, videoFilter, visibleFilteredVideos]);
+
   const hasBenchmarkData = visibleFilteredVideos.length > 0;
-  const comparableCreators = creatorLeaderboard.filter((entry) => entry.videosAnalyzed > 0);
-  const selectedLeftCreator = youtubeCreators.find(
-    (creator) => creator.id === leftComparedCreatorId
-  );
-  const selectedRightCreator = youtubeCreators.find(
-    (creator) => creator.id === rightComparedCreatorId
-  );
-  const leftCreatorAnalytics =
-    leftComparedCreatorId !== null ? creatorAnalyticsById[leftComparedCreatorId] : null;
-  const rightCreatorAnalytics =
-    rightComparedCreatorId !== null ? creatorAnalyticsById[rightComparedCreatorId] : null;
-  const creatorComparison =
-    leftCreatorAnalytics && rightCreatorAnalytics
+  const comparableCreators = useMemo(() => {
+    return creatorLeaderboard.filter((entry) => entry.videosAnalyzed > 0);
+  }, [creatorLeaderboard]);
+
+  const creatorSections = useMemo(() => {
+    return youtubeCreators.map((creator) => {
+      const creatorVideos = creatorVideosById[creator.id] ?? [];
+      const filteredCreatorVideos = creatorVideos.filter((video) =>
+        matchesVideoFilter(video, videoFilter)
+      );
+      const scenarioFilteredCreatorVideos = getScenarioViewData(
+        filteredCreatorVideos,
+        benchmarkSummary,
+        scenarioMode
+      ).visibleVideos;
+      const creatorAnalytics = creatorAnalyticsById[creator.id];
+
+      return {
+        creator,
+        scenarioFilteredCreatorVideos,
+        topBreakoutScore: getTopBreakoutScore(creatorVideos),
+        creatorAnalytics,
+        creatorMomentum: getCreatorMomentumDelta(creatorVideos),
+        creatorBenchmarkStatus:
+          hasBenchmarkData && creatorAnalytics
+            ? getCreatorBenchmarkStatus(creatorAnalytics, benchmarkSummary)
+            : null,
+      };
+    });
+  }, [
+    benchmarkSummary,
+    creatorAnalyticsById,
+    creatorVideosById,
+    hasBenchmarkData,
+    scenarioMode,
+    videoFilter,
+    youtubeCreators,
+  ]);
+
+  const visibleSourceScope = useMemo(() => {
+    const visibleCreatorIds = new Set(
+      creatorSections
+        .filter((section) => section.scenarioFilteredCreatorVideos.length > 0)
+        .map((section) => section.creator.id)
+    );
+
+    return {
+      creators: visibleCreatorIds.size,
+      videos: visibleFilteredVideos.length,
+    };
+  }, [creatorSections, visibleFilteredVideos.length]);
+
+  const lastUpdatedLabel = useMemo(() => {
+    return formatLastUpdated(youtubeLastUpdatedAt);
+  }, [youtubeLastUpdatedAt]);
+
+  const freshnessLabel = useMemo(() => {
+    return visibleFilteredVideos.length > 0
+      ? `${formatHoursAge(dataFreshness.newestVideoAgeHours)} newest`
+      : "Waiting for visible videos";
+  }, [dataFreshness.newestVideoAgeHours, visibleFilteredVideos.length]);
+
+  const selectedLeftCreator = useMemo(() => {
+    return youtubeCreators.find((creator) => creator.id === leftComparedCreatorId);
+  }, [leftComparedCreatorId, youtubeCreators]);
+
+  const selectedRightCreator = useMemo(() => {
+    return youtubeCreators.find((creator) => creator.id === rightComparedCreatorId);
+  }, [rightComparedCreatorId, youtubeCreators]);
+  const leftCreatorAnalytics = useMemo(() => {
+    return leftComparedCreatorId !== null
+      ? creatorAnalyticsById[leftComparedCreatorId]
+      : null;
+  }, [creatorAnalyticsById, leftComparedCreatorId]);
+
+  const rightCreatorAnalytics = useMemo(() => {
+    return rightComparedCreatorId !== null
+      ? creatorAnalyticsById[rightComparedCreatorId]
+      : null;
+  }, [creatorAnalyticsById, rightComparedCreatorId]);
+
+  const creatorComparison = useMemo(() => {
+    return leftCreatorAnalytics && rightCreatorAnalytics
       ? getCreatorComparison(leftCreatorAnalytics, rightCreatorAnalytics)
       : null;
+  }, [leftCreatorAnalytics, rightCreatorAnalytics]);
 
-  const videoFilterOptions: VideoFilter[] = [
-    "All",
-    "Top Breakouts",
-    "High Engagement",
-    "Recent Surge",
-  ];
-  const scenarioModeOptions: ScenarioMode[] = [
-    "Balanced",
-    "Breakout Hunt",
-    "Engagement Hunt",
-    "Emerging Watchlist",
-  ];
-  const leaderboardSortOptions: LeaderboardSortMode[] = [
-    "Avg Breakout",
-    "Breakout Rate",
-    "Views/Hour",
-    "Recent Views",
-  ];
-  const savedViewPresets: SavedViewPreset[] = [
-    {
-      name: "Default Radar",
-      videoFilter: "All",
-      scenarioMode: "Balanced",
-      leaderboardSortMode: "Avg Breakout",
-    },
-    {
-      name: "Breakout Scan",
-      videoFilter: "Top Breakouts",
-      scenarioMode: "Breakout Hunt",
-      leaderboardSortMode: "Avg Breakout",
-    },
-    {
-      name: "Engagement Scan",
-      videoFilter: "High Engagement",
-      scenarioMode: "Engagement Hunt",
-      leaderboardSortMode: "Breakout Rate",
-    },
-    {
-      name: "Early Movers",
-      videoFilter: "All",
-      scenarioMode: "Emerging Watchlist",
-      leaderboardSortMode: "Views/Hour",
-    },
-  ];
   const activeSavedView = useMemo(() => {
     return (
-      savedViewPresets.find((preset) => {
+      SAVED_VIEW_PRESETS.find((preset) => {
         return (
           preset.videoFilter === videoFilter &&
           preset.scenarioMode === scenarioMode &&
@@ -887,27 +1035,44 @@ export default function Home() {
       })?.name ?? "Custom View"
     );
   }, [leaderboardSortMode, scenarioMode, videoFilter]);
-  const defaultSavedViewPreset =
-    savedViewPresets.find((preset) => preset.name === "Default Radar") ??
-    savedViewPresets[0];
-  const insightExportPayload: InsightExportPayload = buildInsightExportPayload({
-    activeViewName: activeSavedView,
-    videoFilter,
-    scenarioMode,
-    leaderboardSortMode,
+
+  const insightExportPayload: InsightExportPayload = useMemo(() => {
+    return buildInsightExportPayload({
+      activeViewName: activeSavedView,
+      videoFilter,
+      scenarioMode,
+      leaderboardSortMode,
+      executiveSummary,
+      insightConfidence,
+      benchmarkSummary,
+      creatorDiversification,
+      outlierAlerts,
+      signalShiftSummary,
+      topSignals,
+      topCreators: creatorLeaderboard,
+      watchlistCandidates,
+      contentOpportunities,
+      analystTakeaways,
+      winningPatterns,
+    });
+  }, [
+    activeSavedView,
+    analystTakeaways,
+    benchmarkSummary,
+    contentOpportunities,
+    creatorDiversification,
+    creatorLeaderboard,
     executiveSummary,
     insightConfidence,
-    benchmarkSummary,
-    creatorDiversification,
+    leaderboardSortMode,
     outlierAlerts,
+    scenarioMode,
     signalShiftSummary,
     topSignals,
-    topCreators: creatorLeaderboard,
+    videoFilter,
     watchlistCandidates,
-    contentOpportunities,
-    analystTakeaways,
     winningPatterns,
-  });
+  ]);
 
   const retryYoutubeFetch = () => {
     if (!breakoutLoading && youtubeCreators.length > 0) {
@@ -950,9 +1115,7 @@ export default function Home() {
   };
 
   const resetDashboardControls = () => {
-    if (defaultSavedViewPreset) {
-      applySavedView(defaultSavedViewPreset);
-    }
+    applySavedView(DEFAULT_SAVED_VIEW_PRESET);
   };
 
   useEffect(() => {
@@ -1118,76 +1281,88 @@ export default function Home() {
         </section>
 
         <section className="mb-10">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Recent YouTube Videos</h2>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-gray-400">YouTube creators only</span>
-                <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
-                  Scenario: {scenarioMode}
-                </span>
-                <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
-                  View: {activeSavedView}
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col items-end gap-1">
-              <div className="flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={resetDashboardControls}
-                  className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
-                >
-                  Reset View
-                </button>
-                <button
-                  type="button"
-                  onClick={copyInsightPayload}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                    copyPayloadState === "copied"
-                      ? "bg-emerald-500/15 text-emerald-300"
-                      : copyPayloadState === "failed"
-                        ? "bg-red-500/15 text-red-300"
-                        : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-                  }`}
-                >
-                  {copyPayloadState === "copied"
-                    ? "Copied"
-                    : copyPayloadState === "failed"
-                      ? "Copy failed"
-                      : "Copy Insight Payload"}
-                </button>
-              </div>
-              <p className="text-[11px] text-zinc-500">
-                Copies JSON snapshot of current dashboard state
-              </p>
-              {copyPayloadState === "copied" && (
-                <p className="text-[11px] text-emerald-300">
-                  Paste into a text editor to inspect the payload
+          <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 sm:p-5">
+            <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-2xl font-bold">Recent YouTube Videos</h2>
+                  <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                    {youtubeCreators.length} tracked creators
+                  </span>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm text-gray-400">
+                  Live intelligence for tracked YouTube creators, with scenario-aware
+                  ranking, benchmark context, and export-ready insight payloads.
                 </p>
-              )}
-              {copyPayloadState === "failed" && (
-                <p className="text-[11px] text-red-300">
-                  Clipboard access was blocked by the browser
-                </p>
-              )}
-            </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                    Active view: {activeSavedView}
+                  </span>
+                  <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                    Scenario: {scenarioMode}
+                  </span>
+                  <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                    Last updated: {lastUpdatedLabel}
+                  </span>
+                  <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                    Source scope: {visibleSourceScope.creators} creators /{" "}
+                    {visibleSourceScope.videos} videos
+                  </span>
+                  <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                    Freshness: {freshnessLabel}
+                  </span>
+                </div>
+              </div>
 
-            <div className="flex flex-wrap gap-2">
-              {videoFilterOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setVideoFilter(option)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                    videoFilter === option
-                      ? "bg-white text-black"
-                      : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
+              <div className="flex w-full flex-col gap-2 xl:max-w-md xl:items-end">
+                <div className="flex flex-wrap gap-2 xl:justify-end">
+                  <button
+                    type="button"
+                    onClick={retryYoutubeFetch}
+                    disabled={breakoutLoading || youtubeCreators.length === 0}
+                    className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {breakoutLoading ? "Refreshing..." : "Refresh Analytics"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetDashboardControls}
+                    className="rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 transition hover:bg-zinc-800"
+                  >
+                    Reset View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={copyInsightPayload}
+                    className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                      copyPayloadState === "copied"
+                        ? "bg-emerald-500/15 text-emerald-300"
+                        : copyPayloadState === "failed"
+                          ? "bg-red-500/15 text-red-300"
+                          : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                    }`}
+                  >
+                    {copyPayloadState === "copied"
+                      ? "Copied"
+                      : copyPayloadState === "failed"
+                        ? "Copy failed"
+                        : "Copy Insight Payload"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-zinc-500 xl:text-right">
+                  Copies a JSON snapshot of the current dashboard read.
+                </p>
+                {copyPayloadState === "copied" && (
+                  <p className="text-[11px] text-emerald-300 xl:text-right">
+                    Paste into a text editor to inspect the payload.
+                  </p>
+                )}
+                {copyPayloadState === "failed" && (
+                  <p className="text-[11px] text-red-300 xl:text-right">
+                    Clipboard access was blocked by the browser.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1201,7 +1376,7 @@ export default function Home() {
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
-              {savedViewPresets.map((preset) => (
+              {SAVED_VIEW_PRESETS.map((preset) => (
                 <button
                   key={preset.name}
                   type="button"
@@ -1218,21 +1393,58 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mb-4 flex flex-wrap gap-2">
-            {scenarioModeOptions.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setScenarioMode(option)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                  scenarioMode === option
-                    ? "bg-white text-black"
-                    : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-                }`}
-              >
-                {option}
-              </button>
-            ))}
+          <div className="mb-4">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Scenario Mode
+              </p>
+              <span className="text-xs text-zinc-500">
+                Active: {scenarioMode}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {SCENARIO_MODE_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setScenarioMode(option)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    scenarioMode === option
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                Video Filter
+              </p>
+              <span className="text-xs text-zinc-500">
+                {visibleFilteredVideos.length} visible videos
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {VIDEO_FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setVideoFilter(option)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                    videoFilter === option
+                      ? "bg-white text-black"
+                      : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
@@ -1392,13 +1604,13 @@ export default function Home() {
                       }
                       className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none"
                     >
-                      {youtubeCreators.map((creator) => (
+                      {comparableCreators.map((creator) => (
                         <option
-                          key={creator.id}
-                          value={creator.id}
-                          disabled={creator.id === rightComparedCreatorId}
+                          key={creator.creatorId}
+                          value={creator.creatorId}
+                          disabled={creator.creatorId === rightComparedCreatorId}
                         >
-                          {creator.name}
+                          {creator.creatorName}
                         </option>
                       ))}
                     </select>
@@ -1409,13 +1621,13 @@ export default function Home() {
                       }
                       className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm text-white outline-none"
                     >
-                      {youtubeCreators.map((creator) => (
+                      {comparableCreators.map((creator) => (
                         <option
-                          key={creator.id}
-                          value={creator.id}
-                          disabled={creator.id === leftComparedCreatorId}
+                          key={creator.creatorId}
+                          value={creator.creatorId}
+                          disabled={creator.creatorId === leftComparedCreatorId}
                         >
-                          {creator.name}
+                          {creator.creatorName}
                         </option>
                       ))}
                     </select>
@@ -1483,11 +1695,11 @@ export default function Home() {
                       </span>
                     </div>
                     <p className="text-sm text-gray-400">
-                      Ranked by average breakout score across recent videos
+                      Ranked by the active leaderboard mode across recent videos
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {leaderboardSortOptions.map((option) => (
+                    {LEADERBOARD_SORT_OPTIONS.map((option) => (
                       <button
                         key={option}
                         type="button"
@@ -1935,25 +2147,15 @@ export default function Home() {
                 />
               )}
 
-              {youtubeCreators.map((creator) => {
-                  const creatorVideos = sortVideosByPerformance(
-                    breakoutPosts[creator.id] ?? []
-                  );
-                  const filteredCreatorVideos = creatorVideos.filter((video) =>
-                    matchesVideoFilter(video, videoFilter)
-                  );
-                  const scenarioFilteredCreatorVideos = getScenarioViewData(
-                    filteredCreatorVideos,
-                    benchmarkSummary,
-                    scenarioMode
-                  ).visibleVideos;
-                  const topBreakoutScore = getTopBreakoutScore(creatorVideos);
-                  const creatorAnalytics = aggregateCreatorStats(creatorVideos);
-                  const creatorMomentum = getCreatorMomentumDelta(creatorVideos);
-                  const creatorBenchmarkStatus = hasBenchmarkData
-                    ? getCreatorBenchmarkStatus(creatorAnalytics, benchmarkSummary)
-                    : null;
-
+              {creatorSections.map(
+                ({
+                  creator,
+                  scenarioFilteredCreatorVideos,
+                  topBreakoutScore,
+                  creatorAnalytics,
+                  creatorMomentum,
+                  creatorBenchmarkStatus,
+                }) => {
                   return (
                     <div
                       key={creator.id}
@@ -1992,7 +2194,7 @@ export default function Home() {
                         </div>
                       )}
 
-                      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 md:grid-cols-5">
+                      <div className="mb-4 grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950/60 p-4 md:grid-cols-6">
                         <div>
                           <p className="text-[11px] uppercase tracking-wide text-zinc-500">
                             Recent Views
@@ -2133,7 +2335,8 @@ export default function Home() {
                       )}
                     </div>
                   );
-                })}
+                }
+              )}
 
               {visibleFilteredVideos.length === 0 && (
                 <DashboardStateCard
