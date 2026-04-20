@@ -15,6 +15,7 @@ import {
   getCreatorLeaderboardEntry,
   getExecutiveSummary,
   getInsightConfidence,
+  getOutlierAlerts,
   getPatternSnapshot,
   getScenarioViewData,
   getTopBreakoutScore,
@@ -30,6 +31,7 @@ import {
   type CreatorLeaderboardEntry,
   type CreatorMomentumDelta,
   type InsightConfidence,
+  type OutlierAlert,
   type ScenarioMode,
   type TopSignalVideo,
   type Video,
@@ -224,6 +226,33 @@ function InsightConfidenceBadge({ confidence }: InsightConfidenceBadgeProps) {
         Confidence: {confidence.level}
       </span>
       <span className="text-xs text-zinc-500">{confidence.reason}</span>
+    </div>
+  );
+}
+
+type OutlierAlertCardProps = {
+  alert: OutlierAlert;
+};
+
+function OutlierAlertCard({ alert }: OutlierAlertCardProps) {
+  const toneClasses =
+    alert.level === "warning"
+      ? "border-amber-500/30 bg-amber-500/10"
+      : "border-zinc-800 bg-zinc-950/70";
+  const badgeClasses =
+    alert.level === "warning"
+      ? "bg-amber-500/15 text-amber-300"
+      : "bg-zinc-900 text-zinc-300";
+
+  return (
+    <div className={`rounded-xl border px-4 py-3 ${toneClasses}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${badgeClasses}`}>
+          {alert.level}
+        </span>
+        <p className="text-sm font-semibold text-white">{alert.title}</p>
+      </div>
+      <p className="mt-2 text-sm text-zinc-300">{alert.message}</p>
     </div>
   );
 }
@@ -529,6 +558,12 @@ export default function Home() {
     scenarioMode
   );
   const insightConfidence = getInsightConfidence(visibleFilteredVideos);
+  const outlierAlerts = getOutlierAlerts(
+    visibleFilteredVideos,
+    creators,
+    breakoutPosts,
+    videoFilter
+  );
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
   const contentOpportunities = getContentOpportunities(
@@ -1262,6 +1297,28 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
+
+                {outlierAlerts.length > 0 && (
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white">
+                        Outlier Alerts
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        Signals that may be distorting the current read
+                      </p>
+                    </div>
+
+                    <div className="space-y-3">
+                      {outlierAlerts.map((alert) => (
+                        <OutlierAlertCard
+                          key={`${alert.level}-${alert.title}`}
+                          alert={alert}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {visibleFilteredVideos.length > 0 && (
                   <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">

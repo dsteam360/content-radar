@@ -164,6 +164,12 @@ export type InsightConfidence = {
   reason: string;
 };
 
+export type OutlierAlert = {
+  level: "info" | "warning";
+  title: string;
+  message: string;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -1161,6 +1167,112 @@ export function getInsightConfidence(videos: Video[]): InsightConfidence {
         ? "A small number of videos are dominating the visible set, so confidence is limited."
         : "The current signal mix is still too thin to treat as a strong market read.",
   };
+}
+
+export function getOutlierAlerts(
+  videos: Video[],
+  creators: Creator[],
+  breakoutPosts: Record<number, Video[]>,
+  videoFilter: VideoFilter
+): OutlierAlert[] {
+  const {
+    dominantCreatorMultiplier,
+    maxInsightItems,
+    smallSampleMaximumVideos,
+  } = INTELLIGENCE_THRESHOLDS.analysis;
+
+  if (videos.length === 0) {
+    return [];
+  }
+
+  const alerts: OutlierAlert[] = [];
+  const totalVisibleViews = videos.reduce((sum, video) => {
+    return sum + getSafeNumber(video.viewCount);
+  }, 0);
+  const topVideo = sortVideosByPerformance(videos)[0] ?? null;
+  const topVideoShare =
+    topVideo && totalVisibleViews > 0
+      ? getSafeNumber(topVideo.viewCount) / totalVisibleViews
+      : 0;
+
+  if (topVideo && topVideoShare >= 0.45) {
+    alerts.push({
+      level: topVideoShare >= 0.6 ? "warning" : "info",
+      title: "Single video dominance",
+      message: `"${topVideo.title || "Untitled video"}" is driving ${Math.round(
+        topVideoShare * 100
+      )}% of visible views, so the current read may be skewed by one breakout.`,
+    });
+  }
+
+  const creatorAverages = creators
+    .filter(
+      (creator) =>
+        creator.platform.toLowerCase() === "youtube" &&
+        normalizeYoutubeHandle(creator.youtube_handle ?? "")
+    )
+    .map((creator) => {
+      const creatorVideos = sortVideosByPerformance(breakoutPosts[creator.id] ?? []).filter(
+        (video) => matchesVideoFilter(video, videoFilter)
+      );
+      const analytics = aggregateCreatorStats(creatorVideos);
+
+      return {
+        creatorName: creator.name,
+        averageBreakoutScore: analytics.avgBreakoutScore,
+        visibleVideos: creatorVideos.length,
+      };
+    })
+    .filter((creator) => creator.visibleVideos > 0)
+    .sort((leftCreator, rightCreator) => {
+      return rightCreator.averageBreakoutScore - leftCreator.averageBreakoutScore;
+    });
+
+  const topCreator = creatorAverages[0];
+  const secondCreator = creatorAverages[1];
+
+  if (
+    topCreator &&
+    topCreator.visibleVideos >= 2 &&
+    (!secondCreator ||
+      topCreator.averageBreakoutScore >=
+        secondCreator.averageBreakoutScore * dominantCreatorMultiplier)
+  ) {
+    alerts.push({
+      level: secondCreator ? "warning" : "info",
+      title: "Creator concentration",
+      message: secondCreator
+        ? `${topCreator.creatorName} is materially ahead on average breakout score, which is concentrating the current read.`
+        : `${topCreator.creatorName} is carrying the current view almost alone, so cross-creator comparisons are limited.`,
+    });
+  }
+
+  if (videos.length <= smallSampleMaximumVideos || videos.length <= 3) {
+    alerts.push({
+      level: "info",
+      title: "Narrow visible set",
+      message:
+        "The current filter is showing a very small slice of videos, so treat the pattern as directional rather than definitive.",
+    });
+  } else {
+    const topTwoVisibleShare =
+      sortVideosByPerformance(videos)
+        .slice(0, 2)
+        .reduce((sum, video) => sum + getSafeNumber(video.viewCount), 0) /
+      Math.max(1, totalVisibleViews);
+
+    if (topTwoVisibleShare >= 0.7) {
+      alerts.push({
+        level: "warning",
+        title: "Top-heavy view",
+        message: `The top 2 visible videos account for ${Math.round(
+          topTwoVisibleShare * 100
+        )}% of visible views, so the market read is unusually concentrated.`,
+      });
+    }
+  }
+
+  return alerts.slice(0, maxInsightItems);
 }
 
 export function getAnalystTakeaways(
