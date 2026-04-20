@@ -595,6 +595,103 @@ export function getCreatorComparison(
   };
 }
 
+export function getContentOpportunities(
+  videos: Video[],
+  benchmarkSummary: BenchmarkSummary
+) {
+  const {
+    engagementDominanceShareMinimum,
+    maxInsightItems,
+    recentMomentumShareMinimum,
+    smallSampleMaximumVideos,
+    topTierConcentrationShareMinimum,
+  } = INTELLIGENCE_THRESHOLDS.analysis;
+  const { topTierScoreMinimum } = INTELLIGENCE_THRESHOLDS.breakout;
+  const { millisecondsPerSecond, recentWindowDays } = INTELLIGENCE_THRESHOLDS.time;
+
+  if (videos.length <= smallSampleMaximumVideos) {
+    return [
+      "Collect a few more visible videos before locking in a content pattern.",
+      "Use the current filter to widen the sample, then look for repeat winners.",
+      "Once the visible set grows, this panel will suggest clearer next-bet content angles.",
+    ];
+  }
+
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+  const recentVideos = enrichedVideos.filter((video) => {
+    const publishedTime = new Date(video.publishedAt).getTime();
+    const ageInDays = Math.max(
+      0,
+      (Date.now() - publishedTime) /
+        (millisecondsPerSecond *
+          INTELLIGENCE_THRESHOLDS.time.secondsPerMinute *
+          INTELLIGENCE_THRESHOLDS.time.minutesPerHour *
+          INTELLIGENCE_THRESHOLDS.time.hoursPerDay)
+    );
+
+    return ageInDays <= recentWindowDays;
+  });
+  const highEngagementVideos = enrichedVideos.filter((video) => {
+    return video.engagementRate >= benchmarkSummary.highEngagementThreshold;
+  });
+  const highVelocityVideos = enrichedVideos.filter((video) => {
+    return video.viewsPerHour >= benchmarkSummary.highVelocityThreshold;
+  });
+  const topTierVideos = enrichedVideos.filter((video) => {
+    return video.breakoutScore >= Math.max(
+      topTierScoreMinimum,
+      benchmarkSummary.highBreakoutThreshold
+    );
+  });
+  const commentDrivenVideos = enrichedVideos.filter((video) => {
+    return video.commentDensity > 0 && video.commentDensity >= video.engagementRate * 0.35;
+  });
+
+  const opportunities: string[] = [];
+
+  if (recentVideos.length / enrichedVideos.length >= recentMomentumShareMinimum) {
+    opportunities.push(
+      "Create around fresh timely angles now, because recent uploads are driving most of the visible momentum."
+    );
+  }
+
+  if (highEngagementVideos.length / enrichedVideos.length >= engagementDominanceShareMinimum) {
+    opportunities.push(
+      "Prioritize formats that invite response, because engagement is outperforming raw reach in the current set."
+    );
+  } else if (commentDrivenVideos.length / enrichedVideos.length >= 0.33) {
+    opportunities.push(
+      "Lean into opinionated prompts or strong POV hooks, because comment-heavy videos are beating passive consumption."
+    );
+  }
+
+  if (highVelocityVideos.length / enrichedVideos.length >= 0.4) {
+    opportunities.push(
+      "Front-load the payoff in the first few seconds, because view velocity is the main winning trait right now."
+    );
+  }
+
+  if (topTierVideos.length / enrichedVideos.length >= topTierConcentrationShareMinimum) {
+    opportunities.push(
+      `Aim above a breakout score of ${benchmarkSummary.highBreakoutThreshold}, because the strongest winners are clustering in that upper performance band.`
+    );
+  }
+
+  if (opportunities.length === 0) {
+    opportunities.push(
+      "Build the next piece around the current median winner, then add a sharper hook or angle to push past the pack."
+    );
+    opportunities.push(
+      "Use the benchmark summary as your floor, especially on views per hour and breakout score."
+    );
+    opportunities.push(
+      "Test one tighter, more opinionated concept next to see if it can break out above the visible median."
+    );
+  }
+
+  return opportunities.slice(0, maxInsightItems);
+}
+
 export function getAnalystTakeaways(
   videos: Video[],
   creators: Creator[],

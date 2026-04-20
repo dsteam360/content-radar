@@ -8,6 +8,7 @@ import {
   getAnalystTakeaways,
   getBenchmarkSummary,
   getBreakoutReason,
+  getContentOpportunities,
   getCreatorComparison,
   getCreatorBenchmarkStatus,
   getCreatorLeaderboardEntry,
@@ -449,6 +450,10 @@ export default function Home() {
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
   const benchmarkSummary = getBenchmarkSummary(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
+  const contentOpportunities = getContentOpportunities(
+    visibleFilteredVideos,
+    benchmarkSummary
+  );
   const analystTakeaways = getAnalystTakeaways(
     visibleFilteredVideos,
     creators,
@@ -1040,6 +1045,29 @@ export default function Home() {
                     </div>
                   </div>
                 )}
+
+                <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-white">
+                      Content Opportunities
+                    </h3>
+                    <p className="text-sm text-gray-400">
+                      What the current visible signal set suggests you should create
+                      next
+                    </p>
+                  </div>
+
+                  <ul className="space-y-3 text-sm text-zinc-200">
+                    {contentOpportunities.map((opportunity) => (
+                      <li
+                        key={opportunity}
+                        className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
+                      >
+                        {opportunity}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
 
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                   <div className="mb-4">
