@@ -13,6 +13,7 @@ import {
   getCreatorBenchmarkStatus,
   getCreatorLeaderboardEntry,
   getPatternSnapshot,
+  getScenarioViewData,
   getTopBreakoutScore,
   getTopSignals,
   getWatchlistCandidates,
@@ -24,6 +25,7 @@ import {
   type CreatorBenchmarkStatus,
   type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
+  type ScenarioMode,
   type TopSignalVideo,
   type Video,
   type VideoFilter,
@@ -193,6 +195,7 @@ export default function Home() {
   const [youtubeErrorMessage, setYoutubeErrorMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [videoFilter, setVideoFilter] = useState<VideoFilter>("All");
+  const [scenarioMode, setScenarioMode] = useState<ScenarioMode>("Balanced");
   const [leaderboardSortMode, setLeaderboardSortMode] =
     useState<LeaderboardSortMode>("Avg Breakout");
   const [leftComparedCreatorId, setLeftComparedCreatorId] = useState<number | null>(
@@ -443,13 +446,19 @@ export default function Home() {
     ) as Record<number, ReturnType<typeof aggregateCreatorStats>>;
   }, [breakoutPosts, youtubeCreators]);
 
-  const visibleFilteredVideos = youtubeCreators.flatMap((creator) =>
+  const baseVisibleFilteredVideos = youtubeCreators.flatMap((creator) =>
     sortVideosByPerformance(breakoutPosts[creator.id] ?? []).filter((video) =>
       matchesVideoFilter(video, videoFilter)
     )
   );
+  const benchmarkSummary = getBenchmarkSummary(baseVisibleFilteredVideos);
+  const scenarioViewData = getScenarioViewData(
+    baseVisibleFilteredVideos,
+    benchmarkSummary,
+    scenarioMode
+  );
+  const visibleFilteredVideos = scenarioViewData.visibleVideos;
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
-  const benchmarkSummary = getBenchmarkSummary(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
   const contentOpportunities = getContentOpportunities(
     visibleFilteredVideos,
@@ -493,6 +502,12 @@ export default function Home() {
     "Top Breakouts",
     "High Engagement",
     "Recent Surge",
+  ];
+  const scenarioModeOptions: ScenarioMode[] = [
+    "Balanced",
+    "Breakout Hunt",
+    "Engagement Hunt",
+    "Emerging Watchlist",
   ];
   const leaderboardSortOptions: LeaderboardSortMode[] = [
     "Avg Breakout",
@@ -673,7 +688,12 @@ export default function Home() {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Recent YouTube Videos</h2>
-              <span className="text-sm text-gray-400">YouTube creators only</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-gray-400">YouTube creators only</span>
+                <span className="rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] uppercase tracking-wide text-zinc-300">
+                  Scenario: {scenarioMode}
+                </span>
+              </div>
             </div>
             <div className="flex flex-wrap gap-2">
               {videoFilterOptions.map((option) => (
@@ -693,40 +713,131 @@ export default function Home() {
             </div>
           </div>
 
+          <div className="mb-4 flex flex-wrap gap-2">
+            {scenarioModeOptions.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => setScenarioMode(option)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                  scenarioMode === option
+                    ? "bg-white text-black"
+                    : "bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+
           {visibleFilteredVideos.length > 0 && (
             <div className="mb-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-              <SignalCard
-                label="Top Breakout"
-                video={topSignals.topBreakoutVideo}
-                metricLabel="Breakout Score"
-                metricValue={formatCompactNumber(
-                  topSignals.topBreakoutVideo?.breakoutScore
-                )}
-              />
-              <SignalCard
-                label="Fastest Rising"
-                video={topSignals.fastestVideo}
-                metricLabel="Views / Hour"
-                metricValue={formatCompactNumber(
-                  topSignals.fastestVideo?.viewsPerHour
-                )}
-              />
-              <SignalCard
-                label="Best Engagement"
-                video={topSignals.mostEngagingVideo}
-                metricLabel="Engagement Rate"
-                metricValue={`${(
-                  (topSignals.mostEngagingVideo?.engagementRate ?? 0) * 100
-                ).toFixed(1)}%`}
-              />
-              <SignalCard
-                label="Strongest Comments"
-                video={topSignals.strongestCommentVideo}
-                metricLabel="Comments"
-                metricValue={formatCompactNumber(
-                  topSignals.strongestCommentVideo?.commentCount
-                )}
-              />
+              {scenarioViewData.emphasizeEngagement ? (
+                <>
+                  <SignalCard
+                    label="Best Engagement"
+                    video={topSignals.mostEngagingVideo}
+                    metricLabel="Engagement Rate"
+                    metricValue={`${(
+                      (topSignals.mostEngagingVideo?.engagementRate ?? 0) * 100
+                    ).toFixed(1)}%`}
+                  />
+                  <SignalCard
+                    label="Strongest Comments"
+                    video={topSignals.strongestCommentVideo}
+                    metricLabel="Comments"
+                    metricValue={formatCompactNumber(
+                      topSignals.strongestCommentVideo?.commentCount
+                    )}
+                  />
+                  <SignalCard
+                    label="Fastest Rising"
+                    video={topSignals.fastestVideo}
+                    metricLabel="Views / Hour"
+                    metricValue={formatCompactNumber(
+                      topSignals.fastestVideo?.viewsPerHour
+                    )}
+                  />
+                  <SignalCard
+                    label="Top Breakout"
+                    video={topSignals.topBreakoutVideo}
+                    metricLabel="Breakout Score"
+                    metricValue={formatCompactNumber(
+                      topSignals.topBreakoutVideo?.breakoutScore
+                    )}
+                  />
+                </>
+              ) : scenarioViewData.emphasizeWatchlist ? (
+                <>
+                  <SignalCard
+                    label="Fastest Rising"
+                    video={topSignals.fastestVideo}
+                    metricLabel="Views / Hour"
+                    metricValue={formatCompactNumber(
+                      topSignals.fastestVideo?.viewsPerHour
+                    )}
+                  />
+                  <SignalCard
+                    label="Top Breakout"
+                    video={topSignals.topBreakoutVideo}
+                    metricLabel="Breakout Score"
+                    metricValue={formatCompactNumber(
+                      topSignals.topBreakoutVideo?.breakoutScore
+                    )}
+                  />
+                  <SignalCard
+                    label="Best Engagement"
+                    video={topSignals.mostEngagingVideo}
+                    metricLabel="Engagement Rate"
+                    metricValue={`${(
+                      (topSignals.mostEngagingVideo?.engagementRate ?? 0) * 100
+                    ).toFixed(1)}%`}
+                  />
+                  <SignalCard
+                    label="Strongest Comments"
+                    video={topSignals.strongestCommentVideo}
+                    metricLabel="Comments"
+                    metricValue={formatCompactNumber(
+                      topSignals.strongestCommentVideo?.commentCount
+                    )}
+                  />
+                </>
+              ) : (
+                <>
+                  <SignalCard
+                    label="Top Breakout"
+                    video={topSignals.topBreakoutVideo}
+                    metricLabel="Breakout Score"
+                    metricValue={formatCompactNumber(
+                      topSignals.topBreakoutVideo?.breakoutScore
+                    )}
+                  />
+                  <SignalCard
+                    label="Fastest Rising"
+                    video={topSignals.fastestVideo}
+                    metricLabel="Views / Hour"
+                    metricValue={formatCompactNumber(
+                      topSignals.fastestVideo?.viewsPerHour
+                    )}
+                  />
+                  <SignalCard
+                    label="Best Engagement"
+                    video={topSignals.mostEngagingVideo}
+                    metricLabel="Engagement Rate"
+                    metricValue={`${(
+                      (topSignals.mostEngagingVideo?.engagementRate ?? 0) * 100
+                    ).toFixed(1)}%`}
+                  />
+                  <SignalCard
+                    label="Strongest Comments"
+                    video={topSignals.strongestCommentVideo}
+                    metricLabel="Comments"
+                    metricValue={formatCompactNumber(
+                      topSignals.strongestCommentVideo?.commentCount
+                    )}
+                  />
+                </>
+              )}
             </div>
           )}
 
@@ -1051,6 +1162,52 @@ export default function Home() {
                   </div>
                 )}
 
+                {scenarioViewData.emphasizeWatchlist && (
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white">
+                        Watchlist Candidates
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        Emerging videos worth watching before they become obvious winners
+                      </p>
+                    </div>
+
+                    {watchlistCandidates.length > 0 ? (
+                      <div className="space-y-3">
+                        {watchlistCandidates.map((video) => (
+                          <div
+                            key={video.id}
+                            className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="line-clamp-2 text-sm font-semibold text-white">
+                                  {video.title}
+                                </p>
+                                <p className="mt-1 text-xs text-zinc-500">
+                                  {video.channelTitle || "Tracked YouTube creator"}
+                                </p>
+                              </div>
+                              <span className="shrink-0 rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-300">
+                                {formatCompactNumber(video.viewsPerHour)} vph
+                              </span>
+                            </div>
+                            <p className="mt-2 text-xs text-zinc-400">
+                              {video.watchlistReason}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
+                        Not enough emerging videos stand out yet. Broaden the filter or
+                        wait for fresher uploads to surface new watchlist candidates.
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                   <div className="mb-4">
                     <h3 className="text-lg font-semibold text-white">
@@ -1074,49 +1231,51 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-white">
-                      Watchlist Candidates
-                    </h3>
-                    <p className="text-sm text-gray-400">
-                      Emerging videos worth watching before they become obvious winners
-                    </p>
-                  </div>
+                {!scenarioViewData.emphasizeWatchlist && (
+                  <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                    <div className="mb-4">
+                      <h3 className="text-lg font-semibold text-white">
+                        Watchlist Candidates
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        Emerging videos worth watching before they become obvious winners
+                      </p>
+                    </div>
 
-                  {watchlistCandidates.length > 0 ? (
-                    <div className="space-y-3">
-                      {watchlistCandidates.map((video) => (
-                        <div
-                          key={video.id}
-                          className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="line-clamp-2 text-sm font-semibold text-white">
-                                {video.title}
-                              </p>
-                              <p className="mt-1 text-xs text-zinc-500">
-                                {video.channelTitle || "Tracked YouTube creator"}
-                              </p>
+                    {watchlistCandidates.length > 0 ? (
+                      <div className="space-y-3">
+                        {watchlistCandidates.map((video) => (
+                          <div
+                            key={video.id}
+                            className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="line-clamp-2 text-sm font-semibold text-white">
+                                  {video.title}
+                                </p>
+                                <p className="mt-1 text-xs text-zinc-500">
+                                  {video.channelTitle || "Tracked YouTube creator"}
+                                </p>
+                              </div>
+                              <span className="shrink-0 rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-300">
+                                {formatCompactNumber(video.viewsPerHour)} vph
+                              </span>
                             </div>
-                            <span className="shrink-0 rounded-full bg-zinc-900 px-2.5 py-1 text-[11px] font-medium text-zinc-300">
-                              {formatCompactNumber(video.viewsPerHour)} vph
-                            </span>
+                            <p className="mt-2 text-xs text-zinc-400">
+                              {video.watchlistReason}
+                            </p>
                           </div>
-                          <p className="mt-2 text-xs text-zinc-400">
-                            {video.watchlistReason}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
-                      Not enough emerging videos stand out yet. Broaden the filter or
-                      wait for fresher uploads to surface new watchlist candidates.
-                    </div>
-                  )}
-                </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-zinc-800 bg-zinc-950/70 px-4 py-3 text-sm text-zinc-400">
+                        Not enough emerging videos stand out yet. Broaden the filter or
+                        wait for fresher uploads to surface new watchlist candidates.
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
                   <div className="mb-4">
@@ -1211,6 +1370,11 @@ export default function Home() {
                   const filteredCreatorVideos = creatorVideos.filter((video) =>
                     matchesVideoFilter(video, videoFilter)
                   );
+                  const scenarioFilteredCreatorVideos = getScenarioViewData(
+                    filteredCreatorVideos,
+                    benchmarkSummary,
+                    scenarioMode
+                  ).visibleVideos;
                   const topBreakoutScore = getTopBreakoutScore(creatorVideos);
                   const creatorAnalytics = aggregateCreatorStats(creatorVideos);
                   const creatorBenchmarkStatus = hasBenchmarkData
@@ -1306,9 +1470,9 @@ export default function Home() {
                         </div>
                       </div>
 
-                      {filteredCreatorVideos.length ? (
+                      {scenarioFilteredCreatorVideos.length ? (
                         <div className="space-y-3">
-                          {filteredCreatorVideos.map((video) => {
+                          {scenarioFilteredCreatorVideos.map((video) => {
                             const breakoutScore =
                               typeof video.breakoutScore === "number" &&
                               Number.isFinite(video.breakoutScore)

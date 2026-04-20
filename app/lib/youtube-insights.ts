@@ -50,6 +50,12 @@ export type VideoFilter =
   | "High Engagement"
   | "Recent Surge";
 
+export type ScenarioMode =
+  | "Balanced"
+  | "Breakout Hunt"
+  | "Engagement Hunt"
+  | "Emerging Watchlist";
+
 export type PatternSnapshot = {
   visibleVideos: number;
   averageViews: number;
@@ -128,6 +134,13 @@ export type WatchlistCandidate = {
   breakoutScore: number;
   viewsPerHour: number;
   watchlistReason: string;
+};
+
+export type ScenarioViewData = {
+  visibleVideos: Video[];
+  emphasizeTopSignals: boolean;
+  emphasizeEngagement: boolean;
+  emphasizeWatchlist: boolean;
 };
 
 type CreatorVideoSummary = {
@@ -800,6 +813,73 @@ export function getWatchlistCandidates(
       watchlistReason: video.watchlistReason,
     };
   });
+}
+
+export function getScenarioViewData(
+  videos: Video[],
+  benchmarkSummary: BenchmarkSummary,
+  scenarioMode: ScenarioMode
+): ScenarioViewData {
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+  const watchlistIds = new Set(
+    getWatchlistCandidates(videos, benchmarkSummary).map((video) => video.id)
+  );
+
+  const orderedVideos = [...enrichedVideos].sort((leftVideo, rightVideo) => {
+    if (scenarioMode === "Breakout Hunt") {
+      if (rightVideo.breakoutScore !== leftVideo.breakoutScore) {
+        return rightVideo.breakoutScore - leftVideo.breakoutScore;
+      }
+
+      return rightVideo.viewsPerHour - leftVideo.viewsPerHour;
+    }
+
+    if (scenarioMode === "Engagement Hunt") {
+      if (rightVideo.engagementRate !== leftVideo.engagementRate) {
+        return rightVideo.engagementRate - leftVideo.engagementRate;
+      }
+
+      if (rightVideo.commentDensity !== leftVideo.commentDensity) {
+        return rightVideo.commentDensity - leftVideo.commentDensity;
+      }
+
+      return rightVideo.breakoutScore - leftVideo.breakoutScore;
+    }
+
+    if (scenarioMode === "Emerging Watchlist") {
+      const leftIsWatchlist = watchlistIds.has(leftVideo.id) ? 1 : 0;
+      const rightIsWatchlist = watchlistIds.has(rightVideo.id) ? 1 : 0;
+
+      if (rightIsWatchlist !== leftIsWatchlist) {
+        return rightIsWatchlist - leftIsWatchlist;
+      }
+
+      if (rightVideo.viewsPerHour !== leftVideo.viewsPerHour) {
+        return rightVideo.viewsPerHour - leftVideo.viewsPerHour;
+      }
+
+      return rightVideo.breakoutScore - leftVideo.breakoutScore;
+    }
+
+    if (rightVideo.breakoutScore !== leftVideo.breakoutScore) {
+      return rightVideo.breakoutScore - leftVideo.breakoutScore;
+    }
+
+    return getSafeNumber(rightVideo.viewCount) - getSafeNumber(leftVideo.viewCount);
+  });
+
+  return {
+    visibleVideos: orderedVideos.map((video) => {
+      return {
+        ...video,
+        breakoutScore: video.breakoutScore,
+        breakoutReason: video.breakoutReason,
+      };
+    }),
+    emphasizeTopSignals: scenarioMode === "Breakout Hunt",
+    emphasizeEngagement: scenarioMode === "Engagement Hunt",
+    emphasizeWatchlist: scenarioMode === "Emerging Watchlist",
+  };
 }
 
 export function getAnalystTakeaways(
