@@ -143,6 +143,13 @@ export type ScenarioViewData = {
   emphasizeWatchlist: boolean;
 };
 
+export type ExecutiveSummary = {
+  headline: string;
+  subheadline: string;
+  dominantSignal: string;
+  marketState: string;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -879,6 +886,110 @@ export function getScenarioViewData(
     emphasizeTopSignals: scenarioMode === "Breakout Hunt",
     emphasizeEngagement: scenarioMode === "Engagement Hunt",
     emphasizeWatchlist: scenarioMode === "Emerging Watchlist",
+  };
+}
+
+export function getExecutiveSummary(
+  videos: Video[],
+  benchmarkSummary: BenchmarkSummary,
+  scenarioMode: ScenarioMode
+): ExecutiveSummary {
+  const {
+    engagementDominanceShareMinimum,
+    recentMomentumShareMinimum,
+    smallSampleMaximumVideos,
+    topTierConcentrationShareMinimum,
+  } = INTELLIGENCE_THRESHOLDS.analysis;
+  const { topTierScoreMinimum } = INTELLIGENCE_THRESHOLDS.breakout;
+  const { millisecondsPerSecond, recentWindowDays } = INTELLIGENCE_THRESHOLDS.time;
+
+  if (videos.length <= smallSampleMaximumVideos) {
+    return {
+      headline: "Signal is still forming",
+      subheadline:
+        "There are not enough visible videos yet to call the market confidently.",
+      dominantSignal: "Limited sample",
+      marketState: "Early read",
+    };
+  }
+
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+  const recentVideos = enrichedVideos.filter((video) => {
+    const publishedTime = new Date(video.publishedAt).getTime();
+    const ageInDays = Math.max(
+      0,
+      (Date.now() - publishedTime) /
+        (millisecondsPerSecond *
+          INTELLIGENCE_THRESHOLDS.time.secondsPerMinute *
+          INTELLIGENCE_THRESHOLDS.time.minutesPerHour *
+          INTELLIGENCE_THRESHOLDS.time.hoursPerDay)
+    );
+
+    return ageInDays <= recentWindowDays;
+  });
+  const highEngagementVideos = enrichedVideos.filter((video) => {
+    return video.engagementRate >= benchmarkSummary.highEngagementThreshold;
+  });
+  const fastVideos = enrichedVideos.filter((video) => {
+    return video.viewsPerHour >= benchmarkSummary.highVelocityThreshold;
+  });
+  const topTierVideos = enrichedVideos.filter((video) => {
+    return video.breakoutScore >= Math.max(
+      topTierScoreMinimum,
+      benchmarkSummary.highBreakoutThreshold
+    );
+  });
+  const watchlistCandidates = getWatchlistCandidates(videos, benchmarkSummary);
+
+  let headline = "Market looks balanced";
+  let subheadline =
+    "The current visible set is mixed, with no single performance trait dominating.";
+  let dominantSignal = "Balanced signal";
+  let marketState = "Mixed market";
+
+  if (scenarioMode === "Engagement Hunt") {
+    headline = "Engagement is driving the edge";
+    subheadline =
+      "Response quality is doing more work than raw reach in the current filtered set.";
+    dominantSignal = "Engagement-led";
+    marketState = "Interactive market";
+  } else if (scenarioMode === "Emerging Watchlist" && watchlistCandidates.length > 0) {
+    headline = "Emerging watchlist is active";
+    subheadline =
+      "Several rising videos are showing early velocity before becoming obvious winners.";
+    dominantSignal = "Early momentum";
+    marketState = "Pre-breakout window";
+  } else if (topTierVideos.length / enrichedVideos.length >= topTierConcentrationShareMinimum) {
+    headline = "Breakout winners are concentrated";
+    subheadline =
+      "A tight upper band is controlling the strongest outcomes in the visible set.";
+    dominantSignal = "Breakout concentration";
+    marketState = "Leader-driven";
+  } else if (recentVideos.length / enrichedVideos.length >= recentMomentumShareMinimum) {
+    headline = "Momentum is freshness-driven";
+    subheadline =
+      "Recent uploads are setting the pace, so timing and topicality matter right now.";
+    dominantSignal = "Freshness";
+    marketState = "Fast-moving market";
+  } else if (highEngagementVideos.length / enrichedVideos.length >= engagementDominanceShareMinimum) {
+    headline = "Engagement is outperforming reach";
+    subheadline =
+      "Videos with stronger audience response are outrunning broader but shallower reach.";
+    dominantSignal = "Engagement strength";
+    marketState = "Response-led";
+  } else if (fastVideos.length / enrichedVideos.length >= 0.4) {
+    headline = "Velocity is shaping the winners";
+    subheadline =
+      "Fast-rising videos are setting the tone more than steady accumulation.";
+    dominantSignal = "Velocity";
+    marketState = "Momentum market";
+  }
+
+  return {
+    headline,
+    subheadline,
+    dominantSignal,
+    marketState,
   };
 }
 

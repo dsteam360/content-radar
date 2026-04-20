@@ -12,6 +12,7 @@ import {
   getCreatorComparison,
   getCreatorBenchmarkStatus,
   getCreatorLeaderboardEntry,
+  getExecutiveSummary,
   getPatternSnapshot,
   getScenarioViewData,
   getTopBreakoutScore,
@@ -458,6 +459,11 @@ export default function Home() {
     scenarioMode
   );
   const visibleFilteredVideos = scenarioViewData.visibleVideos;
+  const executiveSummary = getExecutiveSummary(
+    visibleFilteredVideos,
+    benchmarkSummary,
+    scenarioMode
+  );
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
   const contentOpportunities = getContentOpportunities(
@@ -728,6 +734,27 @@ export default function Home() {
                 {option}
               </button>
             ))}
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  {executiveSummary.headline}
+                </p>
+                <p className="mt-2 max-w-3xl text-sm text-zinc-400">
+                  {executiveSummary.subheadline}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <span className="rounded-full bg-zinc-950 px-3 py-1.5 text-xs font-medium text-zinc-200">
+                  {executiveSummary.dominantSignal}
+                </span>
+                <span className="rounded-full bg-zinc-950 px-3 py-1.5 text-xs font-medium text-zinc-200">
+                  {executiveSummary.marketState}
+                </span>
+              </div>
+            </div>
           </div>
 
           {visibleFilteredVideos.length > 0 && (
