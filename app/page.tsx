@@ -14,6 +14,7 @@ import {
   getCreatorMomentumDelta,
   getCreatorLeaderboardEntry,
   getExecutiveSummary,
+  getInsightConfidence,
   getPatternSnapshot,
   getScenarioViewData,
   getTopBreakoutScore,
@@ -28,6 +29,7 @@ import {
   type CreatorComparisonMetric,
   type CreatorLeaderboardEntry,
   type CreatorMomentumDelta,
+  type InsightConfidence,
   type ScenarioMode,
   type TopSignalVideo,
   type Video,
@@ -199,6 +201,30 @@ function MomentumBadge({ momentum }: MomentumBadgeProps) {
       {momentum.momentumLabel} · {deltaPrefix}
       {formatCompactNumber(momentum.viewsPerHourDelta)} vph
     </span>
+  );
+}
+
+type InsightConfidenceBadgeProps = {
+  confidence: InsightConfidence;
+};
+
+function InsightConfidenceBadge({ confidence }: InsightConfidenceBadgeProps) {
+  const toneClasses =
+    confidence.level === "High"
+      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+      : confidence.level === "Medium"
+        ? "border-amber-500/30 bg-amber-500/10 text-amber-300"
+        : "border-zinc-700 bg-zinc-900 text-zinc-300";
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <span
+        className={`rounded-full border px-3 py-1 text-[11px] font-medium ${toneClasses}`}
+      >
+        Confidence: {confidence.level}
+      </span>
+      <span className="text-xs text-zinc-500">{confidence.reason}</span>
+    </div>
   );
 }
 
@@ -502,6 +528,7 @@ export default function Home() {
     benchmarkSummary,
     scenarioMode
   );
+  const insightConfidence = getInsightConfidence(visibleFilteredVideos);
   const patternSnapshot = getPatternSnapshot(visibleFilteredVideos);
   const topSignals = getTopSignals(visibleFilteredVideos);
   const contentOpportunities = getContentOpportunities(
@@ -856,6 +883,9 @@ export default function Home() {
                 <p className="mt-2 max-w-3xl text-sm text-zinc-400">
                   {executiveSummary.subheadline}
                 </p>
+                <div className="mt-3">
+                  <InsightConfidenceBadge confidence={insightConfidence} />
+                </div>
               </div>
               <div className="flex flex-wrap gap-2">
                 <span className="rounded-full bg-zinc-950 px-3 py-1.5 text-xs font-medium text-zinc-200">
@@ -1426,6 +1456,9 @@ export default function Home() {
                     <p className="text-sm text-gray-400">
                       Plain-English observations from the current visible set
                     </p>
+                    <div className="mt-3">
+                      <InsightConfidenceBadge confidence={insightConfidence} />
+                    </div>
                   </div>
 
                   <ul className="space-y-3 text-sm text-zinc-200">
@@ -1448,6 +1481,9 @@ export default function Home() {
                     <p className="text-sm text-gray-400">
                       Repeated traits showing up among the strongest visible videos
                     </p>
+                    <div className="mt-3">
+                      <InsightConfidenceBadge confidence={insightConfidence} />
+                    </div>
                   </div>
 
                   <ul className="space-y-3 text-sm text-zinc-200">

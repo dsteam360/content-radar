@@ -158,6 +158,12 @@ export type ExecutiveSummary = {
   marketState: string;
 };
 
+export type InsightConfidence = {
+  level: "High" | "Medium" | "Low";
+  score: number;
+  reason: string;
+};
+
 type CreatorVideoSummary = {
   totalRecentViews: number;
   averageBreakoutScore: number;
@@ -1061,6 +1067,99 @@ export function getExecutiveSummary(
     subheadline,
     dominantSignal,
     marketState,
+  };
+}
+
+export function getInsightConfidence(videos: Video[]): InsightConfidence {
+  const {
+    dominantCreatorMultiplier,
+    recentMomentumShareMinimum,
+    smallSampleMaximumVideos,
+  } = INTELLIGENCE_THRESHOLDS.analysis;
+  const { millisecondsPerSecond, recentWindowDays } = INTELLIGENCE_THRESHOLDS.time;
+
+  if (videos.length <= smallSampleMaximumVideos) {
+    return {
+      level: "Low",
+      score: 28,
+      reason: "Too few visible videos to trust the broader pattern yet.",
+    };
+  }
+
+  const enrichedVideos = videos.map(enrichVideoMetrics);
+  const uniqueCreators = new Set(
+    enrichedVideos
+      .map((video) => video.channelTitle?.trim())
+      .filter((channelTitle): channelTitle is string => Boolean(channelTitle))
+  );
+  const creatorCount = Math.max(1, uniqueCreators.size);
+  const recentVideos = enrichedVideos.filter((video) => {
+    const publishedTime = new Date(video.publishedAt).getTime();
+    const ageInDays = Math.max(
+      0,
+      (Date.now() - publishedTime) /
+        (millisecondsPerSecond *
+          INTELLIGENCE_THRESHOLDS.time.secondsPerMinute *
+          INTELLIGENCE_THRESHOLDS.time.minutesPerHour *
+          INTELLIGENCE_THRESHOLDS.time.hoursPerDay)
+    );
+
+    return ageInDays <= recentWindowDays;
+  });
+  const creatorVideoCounts = enrichedVideos.reduce<Record<string, number>>(
+    (counts, video) => {
+      const creatorKey = video.channelTitle?.trim() || "Unknown creator";
+      counts[creatorKey] = (counts[creatorKey] ?? 0) + 1;
+      return counts;
+    },
+    {}
+  );
+  const orderedCreatorCounts = Object.values(creatorVideoCounts).sort(
+    (leftValue, rightValue) => rightValue - leftValue
+  );
+  const topCreatorShare =
+    (orderedCreatorCounts[0] ?? 0) / Math.max(1, enrichedVideos.length);
+  const topTwoShare =
+    ((orderedCreatorCounts[0] ?? 0) + (orderedCreatorCounts[1] ?? 0)) /
+    Math.max(1, enrichedVideos.length);
+  const recentShare = recentVideos.length / enrichedVideos.length;
+
+  let score = 52;
+
+  score += Math.min(20, (enrichedVideos.length - smallSampleMaximumVideos) * 3);
+  score += Math.min(15, Math.max(0, creatorCount - 1) * 5);
+  score += recentShare >= recentMomentumShareMinimum ? 10 : 4;
+  score -= topCreatorShare >= dominantCreatorMultiplier ? 16 : 0;
+  score -= topTwoShare >= 0.8 ? 12 : 0;
+
+  const normalizedScore = Math.max(0, Math.min(100, Math.round(score)));
+
+  if (normalizedScore >= 75) {
+    return {
+      level: "High",
+      score: normalizedScore,
+      reason: "The visible set is broad enough and not overly concentrated in just a few videos.",
+    };
+  }
+
+  if (normalizedScore >= 50) {
+    return {
+      level: "Medium",
+      score: normalizedScore,
+      reason:
+        creatorCount <= 1
+          ? "The read is useful, but it leans on a narrow creator mix."
+          : "The pattern looks directionally useful, but the current set is still somewhat concentrated.",
+    };
+  }
+
+  return {
+    level: "Low",
+    score: normalizedScore,
+    reason:
+      topCreatorShare >= dominantCreatorMultiplier || topTwoShare >= 0.8
+        ? "A small number of videos are dominating the visible set, so confidence is limited."
+        : "The current signal mix is still too thin to treat as a strong market read.",
   };
 }
 
