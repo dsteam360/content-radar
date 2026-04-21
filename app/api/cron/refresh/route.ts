@@ -19,7 +19,7 @@ function isAuthorized(request: Request) {
   return timingSafeEqual(expected, provided);
 }
 
-export async function POST(request: Request) {
+async function runScheduledRefresh(request: Request) {
   try {
     if (!hasSupabaseAdminEnv()) {
       return NextResponse.json(
@@ -65,4 +65,12 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(request: Request) {
+  return runScheduledRefresh(request);
+}
+
+export async function POST(request: Request) {
+  return runScheduledRefresh(request);
 }

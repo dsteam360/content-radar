@@ -70,6 +70,7 @@ Notes:
 - `NEXT_PUBLIC_*` values are used by the browser client.
 - `SUPABASE_SERVICE_ROLE_KEY` is required for server-side snapshot persistence and history reads.
 - `CRON_SECRET` protects the scheduled refresh endpoint.
+- Use `.env.example` as the local template, but never commit real secret values.
 
 ## Manual Refresh Persistence
 
@@ -88,7 +89,8 @@ Initial page load can still hydrate the dashboard from live YouTube fetches even
 
 The scheduled endpoint is:
 
-- `POST /api/cron/refresh`
+- `GET /api/cron/refresh` for Vercel Cron
+- `POST /api/cron/refresh` for local/manual checks
 
 Authorization:
 
@@ -144,9 +146,26 @@ Use the `Refresh Analytics` button in the dashboard.
 Example with `curl`:
 
 ```bash
-curl -X POST http://localhost:3000/api/cron/refresh \
-  -H "x-cron-secret: YOUR_CRON_SECRET"
+curl http://localhost:3000/api/cron/refresh \
+  -H "Authorization: Bearer YOUR_CRON_SECRET"
 ```
+
+## Vercel Cron
+
+`vercel.json` registers the scheduled refresh:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/refresh",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
+```
+
+This runs the radar refresh every 6 hours. In Vercel, set `CRON_SECRET`; Vercel sends it as an `Authorization` header when invoking the cron path.
 
 ## UI Additions in Phase 2
 
