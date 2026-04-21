@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { hasSupabaseAdminEnv } from "@/app/lib/env";
+import { MissingSnapshotTablesError } from "@/app/lib/radar-history-server";
 import { executeRadarRefresh } from "@/app/lib/radar-refresh";
 
 export async function POST() {
@@ -18,6 +19,16 @@ export async function POST() {
 
     return NextResponse.json({ refresh: result });
   } catch (error) {
+    if (error instanceof MissingSnapshotTablesError) {
+      return NextResponse.json(
+        {
+          error:
+            "Snapshot tables have not been created yet. Run the Supabase migration before using persisted refresh.",
+        },
+        { status: 503 }
+      );
+    }
+
     console.error("Manual radar refresh route error:", error);
 
     return NextResponse.json(

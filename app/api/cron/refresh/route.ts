@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getCronEnv, hasSupabaseAdminEnv } from "@/app/lib/env";
+import { MissingSnapshotTablesError } from "@/app/lib/radar-history-server";
 import { executeRadarRefresh } from "@/app/lib/radar-refresh";
 
 function isAuthorized(request: Request) {
@@ -52,6 +53,17 @@ async function runScheduledRefresh(request: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof MissingSnapshotTablesError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error:
+            "Snapshot tables have not been created yet. Run the Supabase migration before using scheduled refreshes.",
+        },
+        { status: 503 }
+      );
+    }
+
     console.error("Scheduled radar refresh route error:", error);
 
     return NextResponse.json(

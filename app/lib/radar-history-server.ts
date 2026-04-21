@@ -12,6 +12,9 @@ import { createSupabaseAdminClient } from "@/app/lib/supabase-server";
 import type { Creator, CreatorAnalytics, CreatorMomentumDelta, Video } from "@/app/lib/youtube-insights";
 import { getBenchmarkSummary } from "@/app/lib/youtube-insights";
 
+const MISSING_SNAPSHOT_TABLE_MESSAGE =
+  "Snapshot tables are not available yet. Run the Supabase migration before using persisted history.";
+
 type PersistedCreatorSnapshotInput = {
   creator: Creator;
   videos: Video[];
@@ -71,6 +74,24 @@ function toCreatorSnapshotRecord(
   };
 }
 
+function isMissingSnapshotTableError(errorMessage: string) {
+  const normalizedMessage = errorMessage.toLowerCase();
+
+  return (
+    normalizedMessage.includes("radar_snapshots") &&
+    (normalizedMessage.includes("schema cache") ||
+      normalizedMessage.includes("does not exist") ||
+      normalizedMessage.includes("could not find the table"))
+  );
+}
+
+export class MissingSnapshotTablesError extends Error {
+  constructor() {
+    super(MISSING_SNAPSHOT_TABLE_MESSAGE);
+    this.name = "MissingSnapshotTablesError";
+  }
+}
+
 export async function persistRadarSnapshot({
   runType,
   status,
@@ -121,6 +142,10 @@ export async function persistRadarSnapshot({
     .single();
 
   if (snapshotError || !snapshotRow) {
+    if (snapshotError?.message && isMissingSnapshotTableError(snapshotError.message)) {
+      throw new MissingSnapshotTablesError();
+    }
+
     throw new Error(snapshotError?.message || "Failed to persist radar snapshot.");
   }
 
@@ -200,6 +225,10 @@ export async function getRadarHistoryViewFromDatabase(): Promise<RadarHistoryVie
     .limit(10);
 
   if (snapshotError) {
+    if (isMissingSnapshotTableError(snapshotError.message)) {
+      throw new MissingSnapshotTablesError();
+    }
+
     throw new Error(snapshotError.message);
   }
 

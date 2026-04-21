@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { hasSupabaseAdminEnv } from "@/app/lib/env";
 import { getEmptyRadarHistoryView } from "@/app/lib/radar-history";
-import { getRadarHistoryViewFromDatabase } from "@/app/lib/radar-history-server";
+import {
+  MissingSnapshotTablesError,
+  getRadarHistoryViewFromDatabase,
+} from "@/app/lib/radar-history-server";
 
 export async function GET() {
   try {
@@ -17,6 +20,14 @@ export async function GET() {
 
     return NextResponse.json({ history });
   } catch (error) {
+    if (error instanceof MissingSnapshotTablesError) {
+      return NextResponse.json({
+        history: getEmptyRadarHistoryView(
+          "Snapshot tables have not been created yet. Run the Supabase migration to enable persisted history."
+        ),
+      });
+    }
+
     console.error("Radar history route error:", error);
 
     return NextResponse.json(
