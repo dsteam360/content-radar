@@ -192,16 +192,16 @@ function MusicSupervisorPanel({
       {music.profile && (
         <div className="mb-4 flex flex-wrap gap-2">
           {[
-            music.profile.tone,
-            music.profile.pacing,
-            music.profile.energy,
-            music.profile.visualStyle,
-          ].map((signal) => (
+            ["Tone", music.profile.tone],
+            ["Pacing", music.profile.pacing],
+            ["Energy", music.profile.energy],
+            ["Style", music.profile.visualStyle],
+          ].map(([label, signal]) => (
             <span
-              key={signal}
+              key={`${label}-${signal}`}
               className="rounded-full bg-zinc-900 px-3 py-1 text-xs text-zinc-300"
             >
-              {signal}
+              {label}: {signal}
             </span>
           ))}
         </div>
