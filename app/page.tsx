@@ -53,6 +53,7 @@ import {
   type RadarHistoryView,
   type SnapshotMetricDelta,
 } from "./lib/radar-history";
+import { RemixStudio } from "./components/remix-studio";
 import { supabase } from "./lib/supabase";
 
 type LeaderboardSortMode =
@@ -1459,6 +1460,8 @@ export default function Home() {
             )}
           </div>
         </section>
+
+        <RemixStudio />
 
         <section className="mb-10">
           <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4 sm:p-5">
