@@ -2,14 +2,35 @@
  * Theme Name:  Kadence Child
  * Template:    kadence
  * Description: Child theme for Toke Haus
- * Version:     1.5.0
+ * Version:     1.6.0
  * License:     GNU General Public License v3.0
  */
 
 /* ==========================================================================
-   Google Fonts — Fraunces (display headings) + DM Sans (body)
-   Fraunces: optical-size variable font with beautiful weight contrast
-   DM Sans:  geometric humanist — clean, readable, modern
+   DESIGN.md — Toke Haus design tokens
+   Luxury-Organic: "The apothecary that's been here 15 years"
+   ========================================================================== */
+:root {
+  --th-bg:         #0F1F0F;
+  --th-surface:    #1A4A1A;
+  --th-surface-el: #234d23;
+  --th-text:       #E8E2D4;
+  --th-muted:      #8BAE8B;
+  --th-lime:       #A8F080;
+  --th-amber:      #C4914A;
+  --th-border:     #2D6A2D;
+  --th-cream:      #F5F0E4;
+  --th-ff-d:       'Fraunces', Georgia, serif;
+  --th-ff-b:       'DM Sans', system-ui, sans-serif;
+  --th-ff-m:       'Geist Mono', 'Courier New', monospace;
+  --th-ease:       220ms ease-out;
+}
+
+/* ==========================================================================
+   Google Fonts — Fraunces (display headings) + DM Sans (body) + Geist Mono
+   Fraunces: optical-size variable serif — italic for editorial punch
+   DM Sans:  geometric humanist — clean UI font
+   Geist Mono: monospaced — data, prices, specs, badges
    ========================================================================== */
 
 
@@ -280,11 +301,16 @@ textarea {
    Via UI/UX Pro Max: cursor-pointer, hover lift, image zoom, contrast ≥4.5:1
    ========================================================================== */
 
-/* Grid wrapper — constrained & centered */
+/* ==========================================================================
+   Deals grid — DESIGN.md implementation
+   Dark surface cards, 2-col grid, Fraunces names, Geist Mono data, amber pricing
+   ========================================================================== */
+
+/* Grid wrapper — 2-column per DESIGN.md lock */
 .hh-hero-right {
   display: grid !important;
   grid-template-columns: 1fr 1fr !important;
-  gap: 20px !important;
+  gap: 24px !important;
   align-items: start !important;
   width: 100% !important;
   max-width: 780px !important;
@@ -304,43 +330,48 @@ textarea {
   align-items: center !important;
   gap: 10px !important;
   padding-bottom: 16px !important;
-  border-bottom: 1px solid #f3f4f6 !important;
+  border-bottom: 1px solid var(--th-border) !important;
   margin-bottom: 4px !important;
 }
 
+/* Eyebrow — Geist Mono uppercase per DESIGN.md */
 .hh-deals-title {
-  font-size: 11px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.14em !important;
+  font-family: var(--th-ff-m) !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
   text-transform: uppercase !important;
-  color: #374151 !important;
+  color: var(--th-muted) !important;
   flex: 1 !important;
 }
 
 .hh-live-badge {
-  background: #16a34a !important;
-  color: #ffffff !important;
+  background: rgba(168,240,128,0.12) !important;
+  color: var(--th-lime) !important;
+  font-family: var(--th-ff-m) !important;
   font-size: 8px !important;
-  font-weight: 800 !important;
+  font-weight: 600 !important;
   letter-spacing: 0.12em !important;
   padding: 3px 8px !important;
-  border-radius: 3px !important;
+  border-radius: 9999px !important;
+  border: 1px solid rgba(168,240,128,0.25) !important;
 }
 
 .hh-view-all {
+  font-family: var(--th-ff-b) !important;
   font-size: 11px !important;
-  color: #9ca3af !important;
+  color: var(--th-muted) !important;
   font-weight: 500 !important;
   text-decoration: none !important;
   letter-spacing: 0.04em !important;
-  transition: color 0.15s ease !important;
+  transition: color var(--th-ease) !important;
 }
 
 .hh-view-all:hover {
-  color: #2D6A2D !important;
+  color: var(--th-text) !important;
 }
 
-/* Card shell — white, shadow, hover lift */
+/* Card shell — dark surface, DESIGN.md */
 .hh-deal-card {
   display: flex !important;
   flex-direction: column !important;
@@ -349,27 +380,29 @@ textarea {
   margin-bottom: 0 !important;
   overflow: hidden !important;
   position: relative !important;
-  background: #ffffff !important;
-  border: 1px solid #e5e7eb !important;
-  border-radius: 10px !important;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04) !important;
+  background: var(--th-surface) !important;
+  border: 1px solid var(--th-border) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
   cursor: pointer !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  transition: border-color var(--th-ease), transform var(--th-ease), box-shadow var(--th-ease) !important;
 }
 
 .hh-deal-card:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 10px 28px rgba(0,0,0,0.09), 0 2px 8px rgba(0,0,0,0.05) !important;
+  border-color: var(--th-lime) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45) !important;
 }
 
-/* Thumbnail — 4:3 ratio, image zooms on card hover */
+/* Thumbnail — 1:1 square per DESIGN.md, image zooms on hover */
 .hh-deal-thumb {
   width: 100% !important;
   height: auto !important;
-  aspect-ratio: 4 / 3 !important;
-  border-radius: 10px 10px 0 0 !important;
+  aspect-ratio: 1 / 1 !important;
+  border-radius: 12px 12px 0 0 !important;
   overflow: hidden !important;
   display: block !important;
+  background: var(--th-surface-el) !important;
   padding: 0 !important;
   flex-shrink: 0 !important;
 }
@@ -384,90 +417,158 @@ textarea {
 }
 
 .hh-deal-card:hover .hh-deal-thumb img {
-  transform: scale(1.05) !important;
+  transform: scale(1.04) !important;
 }
 
 /* Info area */
 .hh-deal-info {
-  padding: 12px 14px 14px !important;
+  padding: 16px 18px 18px !important;
   flex: 1 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 3px !important;
+  gap: 0 !important;
 }
 
-/* Strain — uppercase eyebrow label */
+/* Strain type — Geist Mono eyebrow */
 .hh-deal-strain {
-  font-size: 9.5px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.10em !important;
+  font-family: var(--th-ff-m) !important;
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
   text-transform: uppercase !important;
-  color: #9ca3af !important;
-  margin-bottom: 1px !important;
+  color: var(--th-muted) !important;
+  margin-bottom: 5px !important;
 }
 
-/* Product name */
+/* Product name — Fraunces, warm parchment */
 .hh-deal-name {
+  font-family: var(--th-ff-d) !important;
   white-space: normal !important;
   overflow: visible !important;
   text-overflow: clip !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-  color: #111827 !important;
-  line-height: 1.35 !important;
-  margin-bottom: 8px !important;
+  font-size: 18px !important;
+  font-weight: 500 !important;
+  color: var(--th-text) !important;
+  line-height: 1.2 !important;
+  margin-bottom: 5px !important;
 }
 
-/* Price — larger, dark (not green — cleaner, higher contrast) */
-.hh-deal-price {
-  font-size: 16px !important;
-  font-weight: 700 !important;
-  color: #111827 !important;
-}
-
-.hh-deal-old {
+/* THC/CBD specs — Geist Mono, lime accent on numbers */
+.hh-deal-thc {
+  font-family: var(--th-ff-m) !important;
   font-size: 11px !important;
-  color: #d1d5db !important;
+  color: var(--th-muted) !important;
+  margin-bottom: 16px !important;
+  line-height: 1.5 !important;
+}
+
+.hh-deal-thc .thc-val {
+  color: var(--th-lime) !important;
+  font-weight: 500 !important;
+}
+
+/* Price row */
+.hh-deal-price-row {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 10px !important;
+  margin-bottom: 14px !important;
+  margin-top: auto !important;
+}
+
+/* Sale price — Geist Mono, amber per DESIGN.md */
+.hh-deal-price {
+  font-family: var(--th-ff-m) !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: var(--th-amber) !important;
+  line-height: 1 !important;
+}
+
+.hh-deal-price-unit {
+  font-family: var(--th-ff-m) !important;
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: var(--th-amber) !important;
+  opacity: 0.8 !important;
+}
+
+/* Original price — muted strikethrough */
+.hh-deal-old {
+  font-family: var(--th-ff-m) !important;
+  font-size: 13px !important;
+  color: var(--th-muted) !important;
   text-decoration: line-through !important;
+  opacity: 0.65 !important;
 }
 
-/* Discount badge — soft green pill instead of hard red */
+/* Discount badge — lime pill */
 .hh-save-badge {
-  background: #f0fdf4 !important;
-  color: #16a34a !important;
+  font-family: var(--th-ff-m) !important;
+  background: rgba(168,240,128,0.1) !important;
+  color: var(--th-lime) !important;
   font-size: 9px !important;
-  font-weight: 700 !important;
-  padding: 2px 6px !important;
-  border-radius: 4px !important;
-  border: 1px solid #bbf7d0 !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  padding: 3px 7px !important;
+  border-radius: 9999px !important;
+  border: 1px solid rgba(168,240,128,0.2) !important;
+  margin-left: auto !important;
+  align-self: center !important;
 }
 
-/* Grade badge — dark glass pill in image corner */
+/* CTA button — full-width secondary → lime on hover */
+.hh-deal-cta {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+  color: var(--th-text) !important;
+  font-family: var(--th-ff-b) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  padding: 11px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--th-border) !important;
+  cursor: pointer !important;
+  transition: background var(--th-ease), border-color var(--th-ease), color var(--th-ease) !important;
+  min-height: 44px !important;
+  text-decoration: none !important;
+}
+
+.hh-deal-cta:hover {
+  background: var(--th-lime) !important;
+  border-color: var(--th-lime) !important;
+  color: #0F1F0F !important;
+}
+
+/* Grade badges — Geist Mono pill, AAAA=lime, AAA=amber */
 .hh-grade-badge {
   position: absolute !important;
-  top: 10px !important;
-  right: 10px !important;
-  margin-left: 0 !important;
-  font-size: 9px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.08em !important;
-  padding: 3px 8px !important;
-  border-radius: 4px !important;
-  border: none !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
+  top: 12px !important;
+  right: 12px !important;
+  font-family: var(--th-ff-m) !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  padding: 4px 9px !important;
+  border-radius: 9999px !important;
 }
 
 .hh-grade-aaaa {
-  background: rgba(0,0,0,0.52) !important;
-  color: #fbbf24 !important;
-  border: none !important;
+  background: rgba(168,240,128,0.12) !important;
+  color: var(--th-lime) !important;
+  border: 1px solid rgba(168,240,128,0.3) !important;
 }
 
 .hh-grade-aaa {
-  background: rgba(0,0,0,0.52) !important;
-  color: #e5e7eb !important;
-  border: none !important;
+  background: rgba(196,145,74,0.12) !important;
+  color: var(--th-amber) !important;
+  border: 1px solid rgba(196,145,74,0.3) !important;
 }
 
 /* ==========================================================================
@@ -957,19 +1058,21 @@ textarea {
 
 /* =============================================================================
    Editorial Deals Section — [editorial_deals]
-   Option A: Hero + 4 supporting grid, mobile swipe-row with peek
+   Dark luxury palette from DESIGN.md — Luxury-Organic, apothecary aesthetic
    ============================================================================= */
 
 :root {
+  --th-ed-bg:          #0F1F0F;
+  --th-ed-surface:     #1A4A1A;
+  --th-ed-surface-el:  #234d23;
+  --th-ed-text:        #E8E2D4;
+  --th-ed-text-muted:  #8BAE8B;
+  --th-ed-border:      #2D6A2D;
+  --th-ed-lime:        #A8F080;
+  --th-ed-amber:       #C4914A;
   --th-ed-green-dark:  #1A4A1A;
   --th-ed-green-mid:   #2D6A2D;
-  --th-ed-lime:        #A8F080;
-  --th-ed-text:        #111827;
-  --th-ed-text-muted:  #6b7280;
-  --th-ed-border:      #e5e7eb;
-  --th-ed-bg:          #FAFAF8;
-  --th-ed-card:        #ffffff;
-  --th-ed-save-ink:    #0d2e0d;
+  --th-ed-save-ink:    #0F1F0F;
 }
 
 .th-ed-deals {
@@ -1008,36 +1111,38 @@ textarea {
 }
 .th-ed-eyebrow {
   display: block !important;
-  font-size: 11px !important;
-  font-weight: 700 !important;
+  font-family: "Geist Mono", "DM Mono", monospace !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
   letter-spacing: 0.14em !important;
   text-transform: uppercase !important;
-  color: var(--th-ed-green-mid) !important;
+  color: var(--th-ed-text-muted) !important;
   margin-bottom: 8px !important;
 }
 .th-ed-title {
   font-family: "Fraunces", Georgia, serif !important;
-  font-weight: 600 !important;
+  font-weight: 400 !important;
   font-size: 40px !important;
   line-height: 1.05 !important;
   letter-spacing: -0.02em !important;
-  color: var(--th-ed-green-dark) !important;
+  color: var(--th-ed-text) !important;
   margin: 0 !important;
 }
 .th-ed-view-all {
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: var(--th-ed-green-mid) !important;
+  color: var(--th-ed-text-muted) !important;
   text-decoration: none !important;
   padding: 10px 16px !important;
-  border: 1.5px solid var(--th-ed-green-mid) !important;
-  border-radius: 999px !important;
-  transition: all 0.15s ease !important;
+  border: 1px solid var(--th-ed-border) !important;
+  border-radius: 8px !important;
+  transition: all 0.22s ease-out !important;
   white-space: nowrap !important;
+  letter-spacing: 0.04em !important;
 }
 .th-ed-view-all:hover {
-  background: var(--th-ed-green-mid) !important;
-  color: #fff !important;
+  border-color: var(--th-ed-lime) !important;
+  color: var(--th-ed-lime) !important;
 }
 
 /* ── Countdown timer ──────────────────────────────────────────────────────── */
@@ -1048,8 +1153,9 @@ textarea {
   gap: 4px !important;
 }
 .th-ed-countdown-label {
+  font-family: "Geist Mono", monospace !important;
   font-size: 10px !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   letter-spacing: 0.1em !important;
   text-transform: uppercase !important;
   color: var(--th-ed-text-muted) !important;
@@ -1066,17 +1172,18 @@ textarea {
   min-width: 30px !important;
 }
 .th-ed-countdown-unit b {
-  font-family: "DM Sans", sans-serif !important;
+  font-family: "Geist Mono", monospace !important;
   font-size: 22px !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   line-height: 1 !important;
-  color: var(--th-ed-green-dark) !important;
+  color: var(--th-ed-lime) !important;
   font-variant-numeric: tabular-nums !important;
 }
 .th-ed-countdown-unit em {
   font-style: normal !important;
+  font-family: "Geist Mono", monospace !important;
   font-size: 9px !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   letter-spacing: 0.08em !important;
   text-transform: uppercase !important;
   color: var(--th-ed-text-muted) !important;
@@ -1085,7 +1192,7 @@ textarea {
 .th-ed-countdown-sep {
   font-size: 18px !important;
   font-weight: 700 !important;
-  color: var(--th-ed-green-mid) !important;
+  color: var(--th-ed-border) !important;
   line-height: 1 !important;
   padding-bottom: 10px !important;
   margin: 0 1px !important;
@@ -1105,50 +1212,63 @@ textarea {
   gap: 16px !important;
 }
 
-/* ── Chips ────────────────────────────────────────────────────────────────── */
+/* ── Chips (hero card) ────────────────────────────────────────────────────── */
 .th-ed-chips { display: flex !important; flex-wrap: wrap !important; gap: 6px !important; margin-bottom: 14px !important; }
 .th-ed-chip {
   display: inline-flex !important;
   align-items: center !important;
   padding: 4px 10px !important;
-  border-radius: 999px !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em !important;
+  border-radius: 9999px !important;
+  font-family: "Geist Mono", monospace !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
   line-height: 1.4 !important;
-  font-family: "DM Sans", sans-serif !important;
 }
+/* AAAA = lime, AAA = amber per DESIGN.md */
 .th-ed-chip-grade {
-  background: #FCF0C4 !important;
-  color: #6B5400 !important;
-  border: 1px solid #F5E1A1 !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.06em !important;
+  background: rgba(168, 240, 128, 0.12) !important;
+  color: var(--th-ed-lime) !important;
+  border: 1px solid rgba(168, 240, 128, 0.35) !important;
+}
+.th-ed-chip-grade-aaa {
+  background: rgba(196, 145, 74, 0.12) !important;
+  color: var(--th-ed-amber) !important;
+  border: 1px solid rgba(196, 145, 74, 0.35) !important;
 }
 .th-ed-chip-strain {
-  background: #EBE1F7 !important;
-  color: #5A3F85 !important;
+  background: rgba(139, 174, 139, 0.12) !important;
+  color: var(--th-ed-text-muted) !important;
+  border: 1px solid rgba(45, 106, 45, 0.4) !important;
 }
 .th-ed-chip-thc {
-  background: #EEF2F6 !important;
-  color: #374151 !important;
+  background: rgba(196, 145, 74, 0.12) !important;
+  color: var(--th-ed-amber) !important;
+  border: 1px solid rgba(196, 145, 74, 0.35) !important;
 }
 
 /* ── Hero card ────────────────────────────────────────────────────────────── */
 .th-ed-hero {
   display: flex !important;
   flex-direction: column !important;
-  background: var(--th-ed-card) !important;
-  border-radius: 20px !important;
+  background: var(--th-ed-surface) !important;
+  border: 1px solid var(--th-ed-border) !important;
+  border-radius: 12px !important;
   overflow: hidden !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.06) !important;
   width: 100% !important;
+  transition: transform 0.22s ease-out, border-color 0.22s ease-out, box-shadow 0.22s ease-out !important;
+}
+.th-ed-hero:hover {
+  transform: translateY(-2px) !important;
+  border-color: var(--th-ed-lime) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35) !important;
 }
 .th-ed-hero-media {
   display: block !important;
   aspect-ratio: 1 / 1 !important;
   overflow: hidden !important;
-  background: #f3f4f1 !important;
+  background: var(--th-ed-surface-el) !important;
 }
 .th-ed-hero-media img {
   width: 100% !important;
@@ -1165,7 +1285,7 @@ textarea {
 }
 .th-ed-hero-title {
   font-family: "Fraunces", Georgia, serif !important;
-  font-weight: 600 !important;
+  font-weight: 500 !important;
   font-size: 28px !important;
   line-height: 1.15 !important;
   letter-spacing: -0.01em !important;
@@ -1173,7 +1293,7 @@ textarea {
   color: var(--th-ed-text) !important;
 }
 .th-ed-hero-title a { color: inherit !important; text-decoration: none !important; }
-.th-ed-hero-title a:hover { color: var(--th-ed-green-mid) !important; }
+.th-ed-hero-title a:hover { color: var(--th-ed-lime) !important; }
 
 .th-ed-rating {
   display: flex !important;
@@ -1195,29 +1315,18 @@ textarea {
 }
 .th-ed-price-hero .th-ed-price-now { font-size: 32px !important; }
 .th-ed-price-now {
-  font-family: "DM Sans", sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 20px !important;
-  color: var(--th-ed-green-dark) !important;
+  font-family: "Geist Mono", monospace !important;
+  font-weight: 600 !important;
+  font-size: 22px !important;
+  color: var(--th-ed-amber) !important;
   letter-spacing: -0.01em !important;
 }
 .th-ed-price-old {
+  font-family: "Geist Mono", monospace !important;
   font-size: 15px !important;
-  color: #9ca3af !important;
+  color: var(--th-ed-text-muted) !important;
   text-decoration: line-through !important;
   text-decoration-thickness: 1.5px !important;
-}
-.th-ed-save-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  padding: 4px 10px !important;
-  background: var(--th-ed-lime) !important;
-  color: var(--th-ed-save-ink) !important;
-  font-weight: 700 !important;
-  font-size: 11px !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  border-radius: 999px !important;
 }
 
 /* ── Weight selector (hero) ───────────────────────────────────────────────── */
@@ -1229,44 +1338,47 @@ textarea {
 }
 .th-ed-weight {
   appearance: none !important;
-  border: 1.5px solid var(--th-ed-border) !important;
-  background: #fff !important;
-  color: var(--th-ed-text) !important;
+  border: 1px solid var(--th-ed-border) !important;
+  background: transparent !important;
+  color: var(--th-ed-text-muted) !important;
   padding: 10px 16px !important;
   font-family: "DM Sans", sans-serif !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  transition: all 0.22s ease-out !important;
   min-height: 40px !important;
 }
-.th-ed-weight:hover:not(.is-oos) { border-color: var(--th-ed-green-mid) !important; }
+.th-ed-weight:hover:not(.is-oos) {
+  border-color: var(--th-ed-lime) !important;
+  color: var(--th-ed-text) !important;
+}
 .th-ed-weight.is-selected {
-  background: var(--th-ed-green-dark) !important;
-  border-color: var(--th-ed-green-dark) !important;
-  color: #fff !important;
+  background: var(--th-ed-lime) !important;
+  border-color: var(--th-ed-lime) !important;
+  color: #0F1F0F !important;
 }
 .th-ed-weight.is-oos {
-  opacity: 0.4 !important;
+  opacity: 0.35 !important;
   cursor: not-allowed !important;
   text-decoration: line-through !important;
 }
 
-/* ── CTA button — unified size for both hero and grid cards ──────────────── */
+/* ── CTA button — secondary style, hover to lime primary per DESIGN.md ───── */
 .th-ed-cta {
   appearance: none !important;
-  border: none !important;
-  background: var(--th-ed-green-dark) !important;
-  color: #fff !important;
+  border: 1px solid var(--th-ed-border) !important;
+  background: transparent !important;
+  color: var(--th-ed-text) !important;
   font-family: "DM Sans", sans-serif !important;
-  font-weight: 700 !important;
+  font-weight: 600 !important;
   font-size: 13px !important;
-  letter-spacing: 0.02em !important;
+  letter-spacing: 0.04em !important;
   padding: 12px 20px !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   cursor: pointer !important;
-  transition: all 0.15s ease !important;
+  transition: all 0.22s ease-out !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -1275,30 +1387,36 @@ textarea {
   position: relative !important;
   width: 100% !important;
 }
-.th-ed-cta:hover { background: #143813 !important; transform: translateY(-1px) !important; }
+.th-ed-cta:hover {
+  background: var(--th-ed-lime) !important;
+  border-color: var(--th-ed-lime) !important;
+  color: #0F1F0F !important;
+  transform: translateY(-1px) !important;
+}
 .th-ed-cta.is-loading { opacity: 0.6 !important; cursor: wait !important; }
 .th-ed-cta-weight { opacity: 0.8 !important; font-weight: 500 !important; }
 
 /* ── Grid card ────────────────────────────────────────────────────────────── */
 .th-ed-card {
   position: relative !important;
-  background: var(--th-ed-card) !important;
-  border-radius: 14px !important;
+  background: var(--th-ed-surface) !important;
+  border: 1px solid var(--th-ed-border) !important;
+  border-radius: 12px !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.05) !important;
-  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+  transition: transform 0.22s ease-out, border-color 0.22s ease-out, box-shadow 0.22s ease-out !important;
 }
 .th-ed-card:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 24px rgba(0,0,0,0.09) !important;
+  border-color: var(--th-ed-lime) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35) !important;
 }
 .th-ed-card-media {
   position: relative !important;
   display: block !important;
   aspect-ratio: 1 / 1 !important;
-  background: #f3f4f1 !important;
+  background: var(--th-ed-surface-el) !important;
   overflow: hidden !important;
 }
 .th-ed-card-media img {
@@ -1306,18 +1424,26 @@ textarea {
   height: 100% !important;
   object-fit: cover !important;
 }
+/* Grade badge — top-right, AAAA = lime, AAA = amber */
 .th-ed-card-grade {
   position: absolute !important;
   top: 10px !important;
-  left: 10px !important;
-  background: #FCF0C4 !important;
-  color: #6B5400 !important;
-  font-weight: 700 !important;
+  right: 10px !important;
+  font-family: "Geist Mono", monospace !important;
+  font-weight: 500 !important;
   font-size: 10px !important;
-  letter-spacing: 0.08em !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
   padding: 4px 9px !important;
-  border-radius: 6px !important;
-  border: 1px solid #F5E1A1 !important;
+  border-radius: 9999px !important;
+  background: rgba(168, 240, 128, 0.15) !important;
+  color: var(--th-ed-lime) !important;
+  border: 1px solid rgba(168, 240, 128, 0.4) !important;
+}
+.th-ed-card-grade-aaa {
+  background: rgba(196, 145, 74, 0.15) !important;
+  color: var(--th-ed-amber) !important;
+  border: 1px solid rgba(196, 145, 74, 0.4) !important;
 }
 .th-ed-card-body {
   padding: 14px 14px 16px !important;
@@ -1327,11 +1453,11 @@ textarea {
   gap: 10px !important;
 }
 .th-ed-card-chips { display: flex !important; flex-wrap: wrap !important; gap: 4px !important; }
-.th-ed-card-chips .th-ed-chip { font-size: 10px !important; padding: 3px 8px !important; }
+.th-ed-card-chips .th-ed-chip { font-size: 9px !important; padding: 3px 8px !important; }
 .th-ed-card-title {
-  font-family: "DM Sans", sans-serif !important;
-  font-weight: 600 !important;
-  font-size: 14px !important;
+  font-family: "Fraunces", Georgia, serif !important;
+  font-weight: 500 !important;
+  font-size: 15px !important;
   line-height: 1.3 !important;
   margin: 0 !important;
   color: var(--th-ed-text) !important;
@@ -1341,126 +1467,10 @@ textarea {
   overflow: hidden !important;
 }
 .th-ed-card-title a { color: inherit !important; text-decoration: none !important; }
-.th-ed-card-title a:hover { color: var(--th-ed-green-mid) !important; }
+.th-ed-card-title a:hover { color: var(--th-ed-lime) !important; }
 .th-ed-card .th-ed-price { margin: 0 !important; gap: 8px !important; }
-.th-ed-card .th-ed-price-now { font-size: 16px !important; }
+.th-ed-card .th-ed-price-now { font-size: 18px !important; }
 .th-ed-card .th-ed-price-old { font-size: 13px !important; }
-.th-ed-card .th-ed-save-badge { font-size: 10px !important; padding: 3px 8px !important; }
-
-.th-ed-quick-add {
-  appearance: none !important;
-  border: 1.5px solid var(--th-ed-green-dark) !important;
-  background: #fff !important;
-  color: var(--th-ed-green-dark) !important;
-  font-family: "DM Sans", sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 12px !important;
-  letter-spacing: 0.04em !important;
-  text-transform: uppercase !important;
-  padding: 10px 12px !important;
-  border-radius: 8px !important;
-  cursor: pointer !important;
-  margin-top: auto !important;
-  transition: all 0.15s ease !important;
-}
-.th-ed-quick-add:hover {
-  background: var(--th-ed-green-dark) !important;
-  color: #fff !important;
-}
-
-/* ── Quick-add popup ──────────────────────────────────────────────────────── */
-.th-ed-popup {
-  position: fixed !important;
-  inset: 0 !important;
-  background: rgba(17, 24, 39, 0.5) !important;
-  z-index: 9999 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 20px !important;
-  animation: th-ed-fade 0.15s ease !important;
-}
-@keyframes th-ed-fade { from { opacity: 0; } to { opacity: 1; } }
-.th-ed-popup[hidden] { display: none !important; }
-.th-ed-popup-inner {
-  background: #fff !important;
-  border-radius: 16px !important;
-  padding: 24px !important;
-  width: 100% !important;
-  max-width: 360px !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2) !important;
-  position: relative !important;
-}
-.th-ed-popup-close {
-  position: absolute !important;
-  top: 12px !important;
-  right: 12px !important;
-  width: 32px !important;
-  height: 32px !important;
-  border: none !important;
-  background: transparent !important;
-  font-size: 24px !important;
-  line-height: 1 !important;
-  color: var(--th-ed-text-muted) !important;
-  cursor: pointer !important;
-  border-radius: 50% !important;
-}
-.th-ed-popup-close:hover { background: #f3f4f6 !important; }
-.th-ed-popup-title {
-  font-family: "Fraunces", Georgia, serif !important;
-  font-weight: 600 !important;
-  font-size: 18px !important;
-  color: var(--th-ed-green-dark) !important;
-  margin-bottom: 16px !important;
-  text-transform: capitalize !important;
-}
-.th-ed-popup-options {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)) !important;
-  gap: 8px !important;
-  margin-bottom: 18px !important;
-}
-.th-ed-popup-opt {
-  appearance: none !important;
-  border: 1.5px solid var(--th-ed-border) !important;
-  background: #fff !important;
-  padding: 12px 8px !important;
-  border-radius: 10px !important;
-  cursor: pointer !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  gap: 4px !important;
-  font-family: "DM Sans", sans-serif !important;
-  transition: all 0.15s ease !important;
-}
-.th-ed-popup-opt:hover:not(.is-oos) { border-color: var(--th-ed-green-mid) !important; }
-.th-ed-popup-opt.is-selected {
-  background: var(--th-ed-green-dark) !important;
-  border-color: var(--th-ed-green-dark) !important;
-  color: #fff !important;
-}
-.th-ed-popup-opt .lbl { font-size: 12px !important; font-weight: 600 !important; }
-.th-ed-popup-opt .px  { font-size: 14px !important; font-weight: 700 !important; }
-.th-ed-popup-opt.is-oos { opacity: 0.4 !important; cursor: not-allowed !important; }
-
-.th-ed-popup-cta {
-  appearance: none !important;
-  border: none !important;
-  background: var(--th-ed-green-dark) !important;
-  color: #fff !important;
-  width: 100% !important;
-  padding: 14px !important;
-  font-family: "DM Sans", sans-serif !important;
-  font-weight: 700 !important;
-  font-size: 14px !important;
-  letter-spacing: 0.02em !important;
-  border-radius: 10px !important;
-  cursor: pointer !important;
-  transition: all 0.15s ease !important;
-}
-.th-ed-popup-cta:disabled { opacity: 0.4 !important; cursor: not-allowed !important; }
-.th-ed-popup-cta:not(:disabled):hover { background: #143813 !important; }
 
 /* ── Toast ────────────────────────────────────────────────────────────────── */
 .th-ed-toast {
@@ -1468,18 +1478,19 @@ textarea {
   bottom: 24px !important;
   left: 50% !important;
   transform: translateX(-50%) !important;
-  background: var(--th-ed-green-dark) !important;
-  color: #fff !important;
+  background: var(--th-ed-surface) !important;
+  color: var(--th-ed-text) !important;
+  border: 1px solid var(--th-ed-border) !important;
   padding: 14px 24px !important;
-  border-radius: 999px !important;
+  border-radius: 9999px !important;
   font-family: "DM Sans", sans-serif !important;
   font-weight: 600 !important;
   font-size: 14px !important;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
   z-index: 10000 !important;
   animation: th-ed-slide-up 0.3s ease !important;
 }
-.th-ed-toast.is-error { background: #b91c1c !important; }
+.th-ed-toast.is-error { background: #7f1d1d !important; border-color: #b91c1c !important; }
 .th-ed-toast[hidden] { display: none !important; }
 @keyframes th-ed-slide-up {
   from { transform: translate(-50%, 20px); opacity: 0; }
@@ -1511,18 +1522,20 @@ textarea {
   display: inline-flex !important;
   align-items: center !important;
   gap: 5px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  color: #b91c1c !important;
-  background: #fef2f2 !important;
-  border: 1px solid #fecaca !important;
+  font-family: "Geist Mono", monospace !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.06em !important;
+  color: var(--th-ed-amber) !important;
+  background: rgba(196, 145, 74, 0.1) !important;
+  border: 1px solid rgba(196, 145, 74, 0.35) !important;
   border-radius: 6px !important;
   padding: 4px 10px !important;
   margin: 0 !important;
 }
 .th-ed-scarcity::before { content: "⚡" !important; font-size: 11px !important; }
 .th-ed-scarcity-sm {
-  font-size: 11px !important;
+  font-size: 10px !important;
   padding: 3px 8px !important;
 }
 
@@ -1554,12 +1567,11 @@ textarea {
   min-height: 34px !important;
 }
 
-/* .th-ed-cta-card intentionally uses same base styles as .th-ed-cta */
-
 /* ── Added success state ──────────────────────────────────────────────────── */
 .th-ed-cta.is-added {
   background: var(--th-ed-lime) !important;
-  color: var(--th-ed-green-dark) !important;
+  border-color: var(--th-ed-lime) !important;
+  color: #0F1F0F !important;
 }
 .th-ed-cta.is-added:hover { background: #96e060 !important; transform: none !important; }
 

@@ -15,7 +15,7 @@ add_action( 'wp_enqueue_scripts', function () {
 	// ── Google Fonts: Fraunces (editorial serif) + DM Sans (UI) ──
 	wp_enqueue_style(
 		'th-google-fonts',
-		'https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=DM+Sans:wght@400;500;600;700&display=swap',
+		'https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Geist+Mono:wght@300;400;500;600&display=swap',
 		[],
 		null
 	);
