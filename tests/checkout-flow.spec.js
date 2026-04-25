@@ -17,7 +17,7 @@
 
 const { test, expect } = require('@playwright/test');
 
-const BASE         = 'http://localhost:8080';
+const BASE         = 'http://tokehaus.local';
 const SHOP_URL     = `${BASE}/shop/`;
 
 // Simple product — confirmed purchasable via GET add-to-cart

@@ -1,7 +1,7 @@
 // @ts-check
 const { test, expect } = require('@playwright/test');
 
-const BASE = 'http://localhost:8080';
+const BASE = 'http://tokehaus.local';
 
 test.describe('Toke Haus Homepage', () => {
 

@@ -126,3 +126,6 @@
 | 2026-04-19 | Dark mode primary, cream secondary | Brand is premium and dark-first. Cream surfaces used only for accent sections (effect tiles, trust bars), never as full alternate theme |
 | 2026-04-19 | Deals grid 2-column | Product photography needs room. Large cards showcase what's being sold. |
 | 2026-04-19 | Geist Mono for all data | Lab-data feel for THC%, prices, grades. Signals expertise. Makes the product feel scientifically curated. |
+| 2026-04-24 | Full redesign — fresh CSS from mockup | Complete style.css rewrite implementing the approved mockup. Flat dark backgrounds (no gradients), card-style stats, solid grade badges (lime/amber fill not translucent), mockup-exact hero layout, footer #0A150A. All Kadence overrides preserved. |
+| 2026-04-24 | Grade badges solid fill | Mockup uses solid lime (#A8F080) for AAAA and solid amber (#C4914A) for AAA — reads as a label stamp, stronger visual hierarchy than the previous translucent treatment. |
+| 2026-04-24 | Hero: flat #0F1F0F, not gradient | Gradient read as generic SaaS. Flat dark is more authoritative and matches the "old-growth forest" mood. |

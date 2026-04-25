@@ -291,7 +291,11 @@ function th_ed_get_scarcity_label( $product ) {
  * ---------------------------------------------------------------------------*/
 
 function th_ed_render_chip( $type, $label ) {
-	return sprintf( '<span class="th-ed-chip th-ed-chip-%s">%s</span>', esc_attr( $type ), esc_html( $label ) );
+	$extra = '';
+	if ( 'grade' === $type ) {
+		$extra = ' th-ed-chip-grade-' . strtolower( esc_attr( $label ) );
+	}
+	return sprintf( '<span class="th-ed-chip th-ed-chip-%s%s">%s</span>', esc_attr( $type ), $extra, esc_html( $label ) );
 }
 
 /**
@@ -394,7 +398,8 @@ function th_ed_render_hero_card( $product_id ) {
 	$chips    = th_ed_get_chips( $product_id );
 	$var      = th_ed_get_variation_data( $product );
 	$img_id   = $product->get_image_id();
-	$img_src  = $img_id ? wp_get_attachment_image_url( $img_id, 'woocommerce_single' ) : wc_placeholder_img_src();
+	// Use 510×510 for hero — natural size must be ≥ rendered size to avoid upscaling blur.
+	$img_src  = $img_id ? ( wp_get_attachment_image_url( $img_id, [ 510, 510 ] ) ?: wp_get_attachment_image_url( $img_id, 'woocommerce_single' ) ) : wc_placeholder_img_src();
 	$url      = get_permalink( $product_id );
 	$scarcity = th_ed_get_scarcity_label( $product );
 	$short    = wp_strip_all_tags( $product->get_short_description() );
@@ -459,7 +464,8 @@ function th_ed_render_grid_card( $product_id ) {
 	$chips    = th_ed_get_chips( $product_id );
 	$var      = th_ed_get_variation_data( $product );
 	$img_id   = $product->get_image_id();
-	$img_src  = $img_id ? wp_get_attachment_image_url( $img_id, [ 400, 400 ] ) : wc_placeholder_img_src();
+	// Use 510×510 — natural size must be ≥ rendered size to avoid upscaling blur.
+	$img_src  = $img_id ? ( wp_get_attachment_image_url( $img_id, [ 510, 510 ] ) ?: wp_get_attachment_image_url( $img_id, [ 400, 400 ] ) ) : wc_placeholder_img_src();
 	$url      = get_permalink( $product_id );
 	$scarcity = th_ed_get_scarcity_label( $product );
 	$short    = wp_strip_all_tags( $product->get_short_description() );
@@ -473,7 +479,7 @@ function th_ed_render_grid_card( $product_id ) {
 				alt="<?php echo esc_attr( $product->get_name() ); ?>"
 				loading="lazy">
 			<?php if ( $chips['grade'] ) : ?>
-				<span class="th-ed-card-grade"><?php echo esc_html( $chips['grade'] ); ?></span>
+				<span class="th-ed-card-grade th-ed-card-grade-<?php echo esc_attr( strtolower( $chips['grade'] ) ); ?>"><?php echo esc_html( $chips['grade'] ); ?></span>
 			<?php endif; ?>
 		</a>
 
